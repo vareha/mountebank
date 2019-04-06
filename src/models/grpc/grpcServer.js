@@ -34,6 +34,7 @@ function create(options, logger, responseFn) {
         if (error) {
             deferred.reject(error)
         }
+        server.start()
         deferred.resolve({
             port: port,
             metadata: {},
