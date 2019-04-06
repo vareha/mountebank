@@ -129,7 +129,8 @@ function loadProtocols (options, baseURL, logger, isAllowedConnection) {
             tcp: require('./models/tcp/tcpServer'),
             http: require('./models/http/httpServer'),
             https: require('./models/https/httpsServer'),
-            smtp: require('./models/smtp/smtpServer')
+            smtp: require('./models/smtp/smtpServer'),
+            grpc: require('./models/grpc/grpcServer')
         },
         customProtocols = loadCustomProtocols(options.protofile, logger),
         config = {
