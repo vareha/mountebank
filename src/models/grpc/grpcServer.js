@@ -5,7 +5,7 @@
  * @module
  */
 
-function create (options, logger, responseFn) {
+function create(options, logger, responseFn) {
     const Q = require('q'),
         deferred = Q.defer(),
         connections = {},
@@ -15,15 +15,15 @@ function create (options, logger, responseFn) {
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
 
     const methodHandler = (call, callback) => {
-        callback(null, {message: 'hello world'});
+        callback(null, { message: 'hello world' });
     }
 
     const service = null,
         proxyTarget = {},
         proxyHandler = {
-            get: function(target, prop, receiver) {
+            get: (target, prop, receiver) => {
                 // give addService the same handler for everything
-                return methodHandler
+                return methodHandler;
             },
         },
         implementation = new Proxy(proxyTarget, proxyHandler)
