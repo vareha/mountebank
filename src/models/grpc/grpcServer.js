@@ -14,6 +14,22 @@ function create (options, logger, responseFn) {
         target = options.host + ":" + options.port,
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
 
+    const methodHandler = (call, callback) => {
+        callback(null, {message: 'hello world'});
+    }
+
+    const service = null,
+        proxyTarget = {},
+        proxyHandler = {
+            get: function(target, prop, receiver) {
+                // give addService the same handler for everything
+                return methodHandler
+            },
+        },
+        implementation = new Proxy(proxyTarget, proxyHandler)
+
+    server.addService(service, implementation)
+
     server.bindAsync(target, credentials, (error, port) => {
         if (error) {
             deferred.reject(error)
