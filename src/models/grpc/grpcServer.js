@@ -15,10 +15,16 @@ function create(options, logger, responseFn) {
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
 
     const methodHandler = (call, callback) => {
-        callback(null, { message: 'hello world' });
+        var reply = new messages.HelloReply();
+        reply.setMessage('Hello ' + call.request.getName());
+        callback(null, reply)
     }
 
-    const service = null,
+    // https://github.com/grpc/grpc/tree/v1.19.0/examples/node/static_codegen
+    var messages = require('./helloworld_pb');
+    var services = require('./helloworld_grpc_pb');
+
+    let service = services.GreeterService,
         proxyTarget = {},
         proxyHandler = {
             get: (target, prop, receiver) => {
