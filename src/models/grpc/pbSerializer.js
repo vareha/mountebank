@@ -4,7 +4,7 @@ function create(messageDefinition) {
     const jspb = require('google-protobuf');
     return msg => {
         const writer = new jspb.BinaryWriter()
-        Object.keys(msg).forEach((key) => {
+        Object.keys(msg).forEach(key => {
             const definition = messageDefinition[key];
             if (!definition) {
                 throw new Error("no definition for field: " + key)
