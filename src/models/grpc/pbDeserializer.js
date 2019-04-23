@@ -28,6 +28,12 @@ function create(messageDefinition) {
                 case "STRING":
                     msg[name] = reader.readString();
                     break;
+                case "UINT32":
+                    msg[name] = reader.readUint32();
+                    break;
+                case "BOOL":
+                    msg[name] = reader.readBool();
+                    break;
                 default:
                     throw new Error("unrecognized protobuf field type: " + type)
             }
