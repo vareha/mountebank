@@ -22,7 +22,7 @@ function create(messageDefinition) {
                 reader.skipField();
                 continue;
             }
-            const type = definition.type || "STRING",
+            const type = definition.t || "STRING",
                 name = definition.name;
             switch (type) {
                 case "STRING":
