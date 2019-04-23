@@ -16,6 +16,24 @@ describe('pbSerializer', function () {
             assert.equal(out.toString(), expected.toString());
         });
 
+        it('should correctly serialize a basic uint32 message', function () {
+            const definition = { age: { i: 1, t: "UINT32" } },
+                message = { age: 1234567890 },
+                serializer = pbSerializer.create(definition),
+                out = serializer(message),
+                expected = new Uint8Array([8, 210, 133, 216, 204, 4]);
+            assert.equal(out.toString(), expected.toString());
+        });
+
+        it('should correctly serialize a basic bool message', function () {
+            const definition = { tf: { i: 1, t: "BOOL" } },
+                message = { tf: true },
+                serializer = pbSerializer.create(definition),
+                out = serializer(message),
+                expected = new Uint8Array([8, 1]);
+            assert.equal(out.toString(), expected.toString());
+        });
+
         it('should assume the STRING type', function () {
             const definition = { name: { i: 1 } },
                 message = { name: "john smith" },
