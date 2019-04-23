@@ -8,7 +8,7 @@ describe('pbSerializer', function () {
     describe('#create', function () {
 
         it('should correctly serialize a basic string message', function () {
-            const definition = { name: { i: 1, type: "STRING" } },
+            const definition = { name: { i: 1, t: "STRING" } },
                 message = { name: "john smith" },
                 serializer = pbSerializer.create(definition),
                 out = serializer(message),
