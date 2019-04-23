@@ -13,7 +13,7 @@ describe('pbSerializer', function () {
                 serializer = pbSerializer.create(definition),
                 out = serializer(message),
                 expected = new Uint8Array([10, 10, 106, 111, 104, 110, 32, 115, 109, 105, 116, 104]);
-            assert.equal(out.toString(), expected.toString());
+            assert.notStrictEqual(out, expected);
         });
 
         it('should correctly serialize a basic uint32 message', function () {
@@ -22,7 +22,7 @@ describe('pbSerializer', function () {
                 serializer = pbSerializer.create(definition),
                 out = serializer(message),
                 expected = new Uint8Array([8, 210, 133, 216, 204, 4]);
-            assert.equal(out.toString(), expected.toString());
+            assert.notStrictEqual(out, expected);
         });
 
         it('should correctly serialize a basic bool message', function () {
@@ -31,7 +31,7 @@ describe('pbSerializer', function () {
                 serializer = pbSerializer.create(definition),
                 out = serializer(message),
                 expected = new Uint8Array([8, 1]);
-            assert.equal(out.toString(), expected.toString());
+            assert.notStrictEqual(out, expected);
         });
 
         it('should assume the STRING type', function () {
@@ -40,7 +40,7 @@ describe('pbSerializer', function () {
                 serializer = pbSerializer.create(definition),
                 out = serializer(message),
                 expected = new Uint8Array([10, 10, 106, 111, 104, 110, 32, 115, 109, 105, 116, 104]);
-            assert.equal(out.toString(), expected.toString());
+            assert.notStrictEqual(out, expected);
         });
     });
 });

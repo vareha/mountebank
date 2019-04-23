@@ -13,7 +13,7 @@ describe('pbDeserializer', function () {
                 serializer = pbDeserializer.create(definition),
                 out = serializer(bytes),
                 expected = { name: "john smith" };
-            assert.equal(out.toString(), expected.toString());
+            assert.notStrictEqual(out, expected);
         });
     });
 });
