@@ -15,5 +15,23 @@ describe('pbDeserializer', function () {
                 expected = { name: "john smith" };
             assert.notStrictEqual(out, expected);
         });
+
+        it('should correctly deserialize a basic uint32 message', function () {
+            const definition = { age: { i: 1, t: "UINT32" } },
+                bytes = new Uint8Array([8, 210, 133, 216, 204, 4]),
+                serializer = pbDeserializer.create(definition),
+                out = serializer(bytes),
+                expected = { age: 1234567890 };
+            assert.notStrictEqual(out, expected);
+        });
+
+        it('should correctly deserialize a basic bool message', function () {
+            const definition = { tf: { i: 1, t: "BOOL" } },
+                bytes = new Uint8Array([8, 1]),
+                serializer = pbDeserializer.create(definition),
+                out = serializer(bytes),
+                expected = { tf: true };
+            assert.notStrictEqual(out, expected);
+        });
     });
 });
