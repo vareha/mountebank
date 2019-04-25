@@ -20,8 +20,7 @@ const getServices = pbjsNamespace =>
 
 /**
  * @param {Namespace} pbjsNamespace A protobuf.js namespace.
- * @returns {Object} A map of message names to protobuf.js types, for all of the messages
- * defined in the pbjsNamespace.
+ * @returns {Object} A map of message names to protobuf.js types.
  */
 const newMessageMap = pbjsNamespace =>
     getMessages(pbjsNamespace)
@@ -43,13 +42,11 @@ const serialize = (toSerialize, messageType) => {
 }
 
 /**
- *
  * @param {Object} messageMap A map of message names to protobuf.js types.
  * @param {string} namespace The namespace that owns the service.
  * @param {string} serviceName The name of the service that owns the method.
  * @param {string} methodName The name of the method.
- * @param {Object} methodDefn The method definition, which should define both
- * requestType and responseType.
+ * @param {Object} methodDefn The method definition, which should define both requestType and responseType.
  * @returns {Object} A valid method object.
  */
 const newMethod = (messageMap, namespace, serviceName, methodName, methodDefn) => {
@@ -76,10 +73,8 @@ const getMethodKey = methodName => methodName[0].toLowerCase() + methodName.subs
  * @param {Object} messageMap A map of message names to protobuf.js types.
  * @param {string} namespace The namespace that owns the service.
  * @param {string} serviceName The name of the service.
- * @param {Object} serviceDefn The service definition, which should define an
- * array of methods.
- * @returns {Object} A valid service object, ready to be passed to
- * grpc.Server.addService().
+ * @param {Object} serviceDefn The service definition, which should define an array of methods.
+ * @returns {Object} A valid service object, ready to be passed to grpc.Server.addService().
  */
 const newService = (messageMap, namespace, serviceName, serviceDefn) =>
     Object.entries(serviceDefn.methods)
