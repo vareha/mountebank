@@ -19,20 +19,54 @@ function create(options, logger, responseFn) {
         target = options.host + ":" + options.port,
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
 
-    const root = protobufjs.Root.fromJSON(options.protos[0]);
+    const root = protobufjs.Root.fromJSON(options.protos);
 
     const messageMap = newMessageMap(root);
 
-    function sayHello(call, callback) {
-        logger.info('sayHello: %s', JSON.stringify(call));
-        const reply = { message: "hello john smith" };
-        callback(null, reply);
-    }
-
     const namespace = "helloworld";
+    
     const services = getServices(root)
         .map(([serviceName, serviceDefn]) => newService(messageMap, namespace, serviceName, serviceDefn));
-    server.addService(services[0], { sayHello: sayHello });
+
+    const newMethodHandler = (namespace, serviceName, methodName, methodDefn) => {
+        return (call, callback) => {
+            logger.info("Called: %s", JSON.stringify([ call.request, namespace, serviceName, methodName, methodDefn.responseType ]));
+            if (namespace == "helloworld" && serviceName == "Greeter" && methodName == "SayHello") {
+                return callback(null, { message: "hello john smith" });
+            }
+            if (methodDefn.responseType == "HelloReply") {
+                return callback(null, { message: "hello john smith" });
+            }
+            return callback({
+                code: grpc.status.UNIMPLEMENTED,
+                message: "No matching predicates found for request",
+            });
+        };
+    };
+
+    const getMethodKey = methodName => methodName[0].toLowerCase() + methodName.substring(1);
+
+    const newServiceHandler = (namespace, serviceName, serviceDefn) => Object.entries(serviceDefn.methods)
+        .reduce(
+            (serviceHandler, [methodName, methodDefn]) => {
+                serviceHandler[getMethodKey(methodName)] = newMethodHandler(namespace, serviceName, methodName, methodDefn);
+                return serviceHandler;
+            },
+            {}
+        );
+
+    const serviceHandlers = getServices(root)
+        .reduce(
+            (serviceHandlers, [serviceName, servideDefn]) => {
+                serviceHandlers[serviceName] = newServiceHandler(namespace, serviceName, servideDefn);
+                return serviceHandlers;
+            },
+            {}
+        );
+
+    logger.info(JSON.stringify(serviceHandlers));
+
+    services.forEach(service => server.addService(service, serviceHandlers["Greeter"]));
 
     server.bindAsync(target, credentials, (error, port) => {
         if (error) {
