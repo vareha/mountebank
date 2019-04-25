@@ -11,14 +11,17 @@ function create(options, logger, responseFn) {
         grpc = require('grpc'),
         protobufjs = require("protobufjs"),
         connections = {},
-        newService = require('./grpcParsing').newService,
+        grpcParsing = require('./grpcParsing'),
+        getServices = grpcParsing.getServices,
+        newMessageMap = grpcParsing.newMessageMap,
+        newService = grpcParsing.newService,
         server = new grpc.Server(),
         target = options.host + ":" + options.port,
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
 
-    const root = protobufjs.Root.fromJSON(options.protos[0]),
-        helloRequest = root.lookupType("HelloRequest"),
-        helloReply = root.lookupType("HelloReply");
+    const root = protobufjs.Root.fromJSON(options.protos[0]);
+
+    const messageMap = newMessageMap(root);
 
     function sayHello(call, callback) {
         logger.info('sayHello: %s', JSON.stringify(call));
@@ -26,30 +29,10 @@ function create(options, logger, responseFn) {
         callback(null, reply);
     }
 
-    function serialize(toSerialize, messageType) {
-        const err = messageType.verify(toSerialize);
-        if (err) {
-            logger.error(err);
-            throw Error(err);
-        }
-        return messageType.encode(toSerialize).finish();
-    }
-
     const namespace = "helloworld";
-    const services = Object.entries(root.nested)
-        .filter(([_, serviceDefn]) => serviceDefn.hasOwnProperty('methods'))
-        .map(([serviceName, serviceDefn]) => newService(root, namespace, serviceName, serviceDefn));
-
-    const greeterService = {
-        sayHello: {
-            path: '/helloworld.Greeter/SayHello',
-            requestStream: false,
-            responseStream: false,
-            requestDeserialize: buffer_arg => helloRequest.decode(buffer_arg),
-            responseSerialize: arg => serialize(arg, helloReply),
-        }
-    };
-    server.addService(greeterService, { sayHello: sayHello });
+    const services = getServices(root)
+        .map(([serviceName, serviceDefn]) => newService(messageMap, namespace, serviceName, serviceDefn));
+    server.addService(services[0], { sayHello: sayHello });
 
     server.bindAsync(target, credentials, (error, port) => {
         if (error) {
