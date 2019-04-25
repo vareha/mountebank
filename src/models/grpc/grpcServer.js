@@ -8,33 +8,65 @@
 function create(options, logger, responseFn) {
     const Q = require('q'),
         deferred = Q.defer(),
-        connections = {},
         grpc = require('grpc'),
+        protobufjs = require("protobufjs"),
+        connections = {},
         server = new grpc.Server(),
         target = options.host + ":" + options.port,
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
 
-    const methodHandler = (call, callback) => {
-        var reply = new messages.HelloReply();
-        reply.setMessage('Hello ' + call.request.getName());
-        callback(null, reply)
+    const messages = {
+        "nested": {
+            "HelloRequest": {
+                "fields": {
+                    "name": {
+                        "type": "string",
+                        "id": 1
+    }
+                }
+            },
+            "HelloReply": {
+                "fields": {
+                    "message": {
+                        "type": "string",
+                        "id": 1
+                    }
+                }
+            }
+        }
     }
 
-    // https://github.com/grpc/grpc/tree/v1.19.0/examples/node/static_codegen
-    var messages = require('./helloworld_pb');
-    var services = require('./helloworld_grpc_pb');
+    const root = protobufjs.Root.fromJSON(messages),
+        helloRequest = root.lookupType("HelloRequest"),
+        helloReply = root.lookupType("HelloReply");
 
-    let service = services.GreeterService,
-        proxyTarget = {},
-        proxyHandler = {
-            get: (target, prop, receiver) => {
-                // give addService the same handler for everything
-                return methodHandler;
-            },
-        },
-        implementation = new Proxy(proxyTarget, proxyHandler)
+    function sayHello(call, callback) {
+        logger.info('sayHello: %s', JSON.stringify(call));
+        const reply = { message: "hello john smith" };
+        callback(null, reply);
+    }
 
-    server.addService(service, implementation)
+    function serialize_HelloReply(arg) {
+        var payload = { message: "hello john smith" };
+        logger.info("reply %s %s", JSON.stringify(arg), JSON.stringify(payload));
+        const err = helloReply.verify(payload);
+        if (err) {
+            logger.error(err);
+            throw Error(err);
+        }
+        return helloReply.encode(payload).finish();
+    }
+
+    const greeterService = {
+        sayHello: {
+            path: '/helloworld.Greeter/SayHello',
+            requestStream: false,
+            responseStream: false,
+            requestDeserialize: buffer_arg => helloRequest.decode(buffer_arg),
+            responseSerialize: serialize_HelloReply,
+        }
+    };
+    server.addService(greeterService, { sayHello: sayHello });
 
     server.bindAsync(target, credentials, (error, port) => {
         if (error) {

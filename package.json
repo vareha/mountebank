@@ -107,6 +107,7 @@
     "jsonpath-plus": "^0.20.0",
     "mailparser": "^2.7.0",
     "nodemailer": "^6.1.1",
+    "protobufjs": "^6.8.8",
     "q": "1.5.1",
     "query-string": "6.6.0",
     "smtp-server": "^3.4.6",
