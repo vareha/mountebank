@@ -15,28 +15,7 @@ function create(options, logger, responseFn) {
         target = options.host + ":" + options.port,
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
 
-    const messages = {
-        "nested": {
-            "HelloRequest": {
-                "fields": {
-                    "name": {
-                        "type": "string",
-                        "id": 1
-    }
-                }
-            },
-            "HelloReply": {
-                "fields": {
-                    "message": {
-                        "type": "string",
-                        "id": 1
-                    }
-                }
-            }
-        }
-    }
-
-    const root = protobufjs.Root.fromJSON(messages),
+    const root = protobufjs.Root.fromJSON(options.protos[0]),
         helloRequest = root.lookupType("HelloRequest"),
         helloReply = root.lookupType("HelloReply");
 
