@@ -4,14 +4,16 @@
  * @param {Namespace} pbjsNamespace A protobuf.js namespace.
  * @returns {Array} All message definitions in the namespace.
  */
-const getMessages = pbjsNamespace => Object.entries(pbjsNamespace.nested)
+const getMessages = pbjsNamespace =>
+    Object.entries(pbjsNamespace.nested)
     .filter(([_, messageDefn]) => messageDefn.hasOwnProperty('fields'));
 
 /**
  * @param {Namespace} pbjsNamespace A protobuf.js namespace.
  * @returns {Array} All service definitions in the namespace.
  */
-const getServices = pbjsNamespace => Object.entries(pbjsNamespace.nested)
+const getServices = pbjsNamespace =>
+    Object.entries(pbjsNamespace.nested)
     .filter(([_, messageDefn]) => messageDefn.hasOwnProperty('methods'));
 
 /**
@@ -19,7 +21,8 @@ const getServices = pbjsNamespace => Object.entries(pbjsNamespace.nested)
  * @returns {Object} A map of message names to protobuf.js types, for all of the messages
  * defined in the pbjsNamespace.
  */
-const newMessageMap = pbjsNamespace => getMessages(pbjsNamespace)
+const newMessageMap = pbjsNamespace =>
+    getMessages(pbjsNamespace)
     .reduce(
         (messageMap, [messageName, _]) => {
             messageMap[messageName] = pbjsNamespace.lookupType(messageName);
