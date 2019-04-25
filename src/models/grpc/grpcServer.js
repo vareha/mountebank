@@ -11,6 +11,7 @@ function create(options, logger, responseFn) {
         grpc = require('grpc'),
         protobufjs = require("protobufjs"),
         connections = {},
+        newService = require('./grpcParsing').newService,
         server = new grpc.Server(),
         target = options.host + ":" + options.port,
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
@@ -33,6 +34,11 @@ function create(options, logger, responseFn) {
         }
         return messageType.encode(toSerialize).finish();
     }
+
+    const namespace = "helloworld";
+    const services = Object.entries(root.nested)
+        .filter(([_, serviceDefn]) => serviceDefn.hasOwnProperty('methods'))
+        .map(([serviceName, serviceDefn]) => newService(root, namespace, serviceName, serviceDefn));
 
     const greeterService = {
         sayHello: {
