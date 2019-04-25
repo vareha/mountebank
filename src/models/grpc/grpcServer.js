@@ -15,47 +15,22 @@ function create(options, logger, responseFn) {
         getServices = grpcParsing.getServices,
         newMessageMap = grpcParsing.newMessageMap,
         newService = grpcParsing.newService,
+        newServiceHandler = grpcParsing.newServiceHandler,
         server = new grpc.Server(),
         target = options.host + ":" + options.port,
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
 
+    // parse our proto services and types from the imposter.json
+    const namespace = "helloworld";
     const root = protobufjs.Root.fromJSON(options.protos);
 
+    // build a map of message names to parsed types
     const messageMap = newMessageMap(root);
-
-    const namespace = "helloworld";
-
-    const newMethodHandler = (namespace, serviceName, methodName, methodDefn) => {
-        return (call, callback) => {
-            logger.info("Called: %s", JSON.stringify([call.request, namespace, serviceName, methodName, methodDefn.responseType]));
-            if (namespace == "helloworld" && serviceName == "Greeter" && methodName == "SayHello") {
-                return callback(null, { message: "hello john smith" });
-            }
-            if (methodDefn.responseType == "HelloReply") {
-                return callback(null, { message: "hello john smith" });
-            }
-            return callback({
-                code: grpc.status.UNIMPLEMENTED,
-                message: "No matching predicates found for request",
-            });
-        };
-    };
-
-    const getMethodKey = methodName => methodName[0].toLowerCase() + methodName.substring(1);
-
-    const newServiceHandler = (namespace, serviceName, serviceDefn) => Object.entries(serviceDefn.methods)
-        .reduce(
-            (serviceHandler, [methodName, methodDefn]) => {
-                serviceHandler[getMethodKey(methodName)] = newMethodHandler(namespace, serviceName, methodName, methodDefn);
-                return serviceHandler;
-            },
-            {}
-        );
 
     // add each service and corresponding handler
     getServices(root).forEach(([serviceName, serviceDefn]) => {
         const service = newService(messageMap, namespace, serviceName, serviceDefn),
-            handler = newServiceHandler(namespace, serviceName, serviceDefn);
+            handler = newServiceHandler(logger, namespace, serviceName, serviceDefn);
         logger.info("Adding service: %s", serviceName);
         server.addService(service, handler);
     })

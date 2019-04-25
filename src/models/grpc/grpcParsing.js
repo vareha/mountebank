@@ -1,12 +1,14 @@
 'use strict';
 
+const grpc = require('grpc');
+
 /**
  * @param {Namespace} pbjsNamespace A protobuf.js namespace.
  * @returns {Array} All message definitions in the namespace.
  */
 const getMessages = pbjsNamespace =>
     Object.entries(pbjsNamespace.nested)
-    .filter(([_, messageDefn]) => messageDefn.hasOwnProperty('fields'));
+        .filter(([_, messageDefn]) => messageDefn.hasOwnProperty('fields'));
 
 /**
  * @param {Namespace} pbjsNamespace A protobuf.js namespace.
@@ -14,7 +16,7 @@ const getMessages = pbjsNamespace =>
  */
 const getServices = pbjsNamespace =>
     Object.entries(pbjsNamespace.nested)
-    .filter(([_, messageDefn]) => messageDefn.hasOwnProperty('methods'));
+        .filter(([_, messageDefn]) => messageDefn.hasOwnProperty('methods'));
 
 /**
  * @param {Namespace} pbjsNamespace A protobuf.js namespace.
@@ -23,13 +25,13 @@ const getServices = pbjsNamespace =>
  */
 const newMessageMap = pbjsNamespace =>
     getMessages(pbjsNamespace)
-    .reduce(
-        (messageMap, [messageName, _]) => {
-            messageMap[messageName] = pbjsNamespace.lookupType(messageName);
-            return messageMap;
-        },
-        {}
-    );
+        .reduce(
+            (messageMap, [messageName, _]) => {
+                messageMap[messageName] = pbjsNamespace.lookupType(messageName);
+                return messageMap;
+            },
+            {}
+        );
 
 const serialize = (toSerialize, messageType) => {
     const err = messageType.verify(toSerialize);
@@ -89,10 +91,38 @@ const newService = (messageMap, namespace, serviceName, serviceDefn) =>
             {}
         );
 
+const newMethodHandler = (logger, namespace, serviceName, methodName, methodDefn) => {
+    return (call, callback) => {
+        logger.info("Called: %s", JSON.stringify([call.request, namespace, serviceName, methodName, methodDefn.responseType]));
+        if (namespace == "helloworld" && serviceName == "Greeter" && methodName == "SayHello") {
+            return callback(null, { message: "hello john smith" });
+        }
+        if (methodDefn.responseType == "HelloReply") {
+            return callback(null, { message: "hello john smith" });
+        }
+        return callback({
+            code: grpc.status.UNIMPLEMENTED,
+            message: "No matching predicates found for request",
+        });
+    };
+};
+
+const newServiceHandler = (logger, namespace, serviceName, serviceDefn) =>
+    Object.entries(serviceDefn.methods)
+        .reduce(
+            (serviceHandler, [methodName, methodDefn]) => {
+                serviceHandler[getMethodKey(methodName)] = newMethodHandler(logger, namespace, serviceName, methodName, methodDefn);
+                return serviceHandler;
+            },
+            {}
+        );
+
 module.exports = {
     getMessages,
     getServices,
     newMessageMap,
     newMethod,
     newService,
+    newServiceHandler,
+    newMethodHandler
 };
