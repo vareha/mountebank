@@ -24,13 +24,10 @@ function create(options, logger, responseFn) {
     const messageMap = newMessageMap(root);
 
     const namespace = "helloworld";
-    
-    const services = getServices(root)
-        .map(([serviceName, serviceDefn]) => newService(messageMap, namespace, serviceName, serviceDefn));
 
     const newMethodHandler = (namespace, serviceName, methodName, methodDefn) => {
         return (call, callback) => {
-            logger.info("Called: %s", JSON.stringify([ call.request, namespace, serviceName, methodName, methodDefn.responseType ]));
+            logger.info("Called: %s", JSON.stringify([call.request, namespace, serviceName, methodName, methodDefn.responseType]));
             if (namespace == "helloworld" && serviceName == "Greeter" && methodName == "SayHello") {
                 return callback(null, { message: "hello john smith" });
             }
@@ -55,19 +52,15 @@ function create(options, logger, responseFn) {
             {}
         );
 
-    const serviceHandlers = getServices(root)
-        .reduce(
-            (serviceHandlers, [serviceName, servideDefn]) => {
-                serviceHandlers[serviceName] = newServiceHandler(namespace, serviceName, servideDefn);
-                return serviceHandlers;
-            },
-            {}
-        );
+    // add each service and corresponding handler
+    getServices(root).forEach(([serviceName, serviceDefn]) => {
+        const service = newService(messageMap, namespace, serviceName, serviceDefn),
+            handler = newServiceHandler(namespace, serviceName, serviceDefn);
+        logger.info("Adding service: %s", serviceName);
+        server.addService(service, handler);
+    })
 
-    logger.info(JSON.stringify(serviceHandlers));
-
-    services.forEach(service => server.addService(service, serviceHandlers["Greeter"]));
-
+    // bind to our port and return our details
     server.bindAsync(target, credentials, (error, port) => {
         if (error) {
             return deferred.reject(error)
