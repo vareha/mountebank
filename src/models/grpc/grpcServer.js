@@ -70,7 +70,7 @@ function create(options, logger, responseFn) {
 
     server.bindAsync(target, credentials, (error, port) => {
         if (error) {
-            deferred.reject(error)
+            return deferred.reject(error)
         }
         server.start()
         deferred.resolve({
