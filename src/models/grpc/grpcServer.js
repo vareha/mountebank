@@ -46,15 +46,13 @@ function create(options, logger, responseFn) {
         callback(null, reply);
     }
 
-    function serialize_HelloReply(arg) {
-        var payload = { message: "hello john smith" };
-        logger.info("reply %s %s", JSON.stringify(arg), JSON.stringify(payload));
-        const err = helloReply.verify(payload);
+    function serialize(toSerialize, messageType) {
+        const err = messageType.verify(toSerialize);
         if (err) {
             logger.error(err);
             throw Error(err);
         }
-        return helloReply.encode(payload).finish();
+        return messageType.encode(toSerialize).finish();
     }
 
     const greeterService = {
@@ -63,7 +61,7 @@ function create(options, logger, responseFn) {
             requestStream: false,
             responseStream: false,
             requestDeserialize: buffer_arg => helloRequest.decode(buffer_arg),
-            responseSerialize: serialize_HelloReply,
+            responseSerialize: arg => serialize(arg, helloReply),
         }
     };
     server.addService(greeterService, { sayHello: sayHello });
