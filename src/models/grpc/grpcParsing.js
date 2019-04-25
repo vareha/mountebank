@@ -68,6 +68,8 @@ const newMethod = (messageMap, namespace, serviceName, methodName, methodDefn) =
     };
 }
 
+const getMethodKey = methodName => methodName[0].toLowerCase() + methodName.substring(1);
+
 /**
  * @param {Object} messageMap A map of message names to protobuf.js types.
  * @param {string} namespace The namespace that owns the service.
@@ -81,8 +83,7 @@ const newService = (messageMap, namespace, serviceName, serviceDefn) =>
     Object.entries(serviceDefn.methods)
         .reduce(
             (service, [methodName, methodDefn]) => {
-                const methodKey = methodName[0].toLowerCase() + methodName.substring(1)
-                service[methodKey] = newMethod(messageMap, namespace, serviceName, methodName, methodDefn);
+                service[getMethodKey(methodName)] = newMethod(messageMap, namespace, serviceName, methodName, methodDefn);
                 return service;
             },
             {}
