@@ -49,7 +49,7 @@ function create(options, logger, responseFn) {
 
         // add each service and corresponding handler
         getServices(namespace).forEach(([serviceName, serviceDefn]) => {
-            const service = newService(messageMap, namespaceName, serviceName, serviceDefn),
+            const service = newService(namespaceName, serviceName, serviceDefn, messageMap),
                 handler = newServiceHandler(namespaceName, serviceName, serviceDefn, grpcHandler);
             logger.info("Adding service: %s.%s", namespaceName, serviceName);
             server.addService(service, handler);
