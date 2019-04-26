@@ -29,11 +29,11 @@ function create(options, logger, responseFn) {
                 return responseFn(grpcRequest);
             })
             .then(response => {
-                if (response.response != null) {
+                if (response.response) {
                     logger.debug("Response: %s", JSON.stringify(response));
                     return callback(null, response.response);
                 }
-                if (response.error != null) {
+                if (response.error) {
                     const error = { code: grpc.status.UNKNOWN, message: "", ...response.error };
                     logger.debug("Error response: %s", JSON.stringify(error));
                     return callback(error);
