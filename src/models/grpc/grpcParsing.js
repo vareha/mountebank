@@ -78,7 +78,8 @@ const newService = (namespaceName, serviceName, serviceDefn, messageMap) =>
     Object.entries(serviceDefn.methods)
         .reduce(
             (service, [methodName, methodDefn]) => {
-                service[getMethodKey(methodName)] = newMethod(namespaceName, serviceName, methodName, messageMap, methodDefn);
+                const methodKey = getMethodKey(methodName);
+                service[methodKey] = newMethod(namespaceName, serviceName, methodName, messageMap, methodDefn);
                 return service;
             },
             {}
