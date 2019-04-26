@@ -21,19 +21,26 @@ function create(options, logger, responseFn) {
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
 
     // parse our proto services and types from the imposter.json
-    const namespace = "helloworld";
-    const root = protobufjs.Root.fromJSON(options.protos);
+    const protos = options.protos || [];
+    Object.entries(protos).forEach(([namespaceName, namespaceDefn]) => {
+        // use protobuf.js to parse the namespace
+        const toParse = {
+            // protobuf.js requires a top level key of "nested"
+            nested: namespaceDefn,
+        };
+        const namespace = protobufjs.Namespace.fromJSON(namespaceName, toParse);
 
     // build a map of message names to parsed types
-    const messageMap = newMessageMap(root);
+        const messageMap = newMessageMap(namespace);
 
     // add each service and corresponding handler
-    getServices(root).forEach(([serviceName, serviceDefn]) => {
-        const service = newService(messageMap, namespace, serviceName, serviceDefn),
-            handler = newServiceHandler(logger, namespace, serviceName, serviceDefn);
-        logger.info("Adding service: %s", serviceName);
+        getServices(namespace).forEach(([serviceName, serviceDefn]) => {
+            const service = newService(messageMap, namespaceName, serviceName, serviceDefn),
+                handler = newServiceHandler(logger, namespaceName, serviceName, serviceDefn);
+            logger.info("Adding service: %s.%s", namespaceName, serviceName);
         server.addService(service, handler);
-    })
+        });
+    });
 
     // bind to our port and return our details
     server.bindAsync(target, credentials, (error, port) => {
