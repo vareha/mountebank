@@ -84,6 +84,13 @@ const newService = (messageMap, namespaceName, serviceName, serviceDefn) =>
             {}
         );
 
+/**
+ * @param {string} namespaceName The name of the namespace that owns the service.
+ * @param {string} serviceName The name of the service.
+ * @param {Object} serviceDefn The service definition, which should define an array of methods.
+ * @param {function} grpcHandler A function to be called to handle GRPC calls.
+ * @returns {Object} A map of service names to functions, ready to be passed to grpc.Server.addService().
+ */
 const newServiceHandler = (namespaceName, serviceName, serviceDefn, grpcHandler) =>
     Object.entries(serviceDefn.methods)
         .reduce(
