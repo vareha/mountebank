@@ -20,6 +20,20 @@ function create(options, logger, responseFn) {
         target = options.host + ":" + options.port,
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
 
+    const grpcHandler = (callback, namespaceName, serviceName, methodName, responseType, request) => {
+        logger.info("Called: %s", JSON.stringify([namespaceName, serviceName, methodName, responseType, request]));
+        if (namespaceName == "helloworld" && serviceName == "Greeter" && methodName == "SayHello") {
+            return callback(null, { message: "hello john smith" });
+        }
+        if (responseType == "HelloReply") {
+            return callback(null, { message: "hello john smith" });
+        }
+        return callback({
+            code: grpc.status.UNIMPLEMENTED,
+            message: "No matching predicates found for request",
+        });
+    }
+
     // parse our proto services and types from the imposter.json
     const protos = options.protos || [];
     Object.entries(protos).forEach(([namespaceName, namespaceDefn]) => {
@@ -30,19 +44,19 @@ function create(options, logger, responseFn) {
         };
         const namespace = protobufjs.Namespace.fromJSON(namespaceName, toParse);
 
-    // build a map of message names to parsed types
+        // build a map of message names to parsed types
         const messageMap = newMessageMap(namespace);
 
-    // add each service and corresponding handler
+        // add each service and corresponding handler
         getServices(namespace).forEach(([serviceName, serviceDefn]) => {
             const service = newService(messageMap, namespaceName, serviceName, serviceDefn),
-                handler = newServiceHandler(logger, namespaceName, serviceName, serviceDefn);
+                handler = newServiceHandler(namespaceName, serviceName, serviceDefn, grpcHandler);
             logger.info("Adding service: %s.%s", namespaceName, serviceName);
-        server.addService(service, handler);
+            server.addService(service, handler);
         });
     });
 
-    // bind to our port and return our details
+    // bind to our port, start the server and return our details
     server.bindAsync(target, credentials, (error, port) => {
         if (error) {
             return deferred.reject(error)

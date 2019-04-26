@@ -1,7 +1,5 @@
 'use strict';
 
-const grpc = require('grpc');
-
 /**
  * @param {Namespace} pbjsNamespace A protobuf.js namespace.
  * @returns {Array} All message definitions in the namespace.
@@ -86,27 +84,14 @@ const newService = (messageMap, namespaceName, serviceName, serviceDefn) =>
             {}
         );
 
-const newMethodHandler = (logger, namespaceName, serviceName, methodName, methodDefn) => {
-    return (call, callback) => {
-        logger.info("Called: %s", JSON.stringify([call.request, namespaceName, serviceName, methodName, methodDefn.responseType]));
-        if (namespaceName == "helloworld" && serviceName == "Greeter" && methodName == "SayHello") {
-            return callback(null, { message: "hello john smith" });
-        }
-        if (methodDefn.responseType == "HelloReply") {
-            return callback(null, { message: "hello john smith" });
-        }
-        return callback({
-            code: grpc.status.UNIMPLEMENTED,
-            message: "No matching predicates found for request",
-        });
-    };
-};
-
-const newServiceHandler = (logger, namespaceName, serviceName, serviceDefn) =>
+const newServiceHandler = (namespaceName, serviceName, serviceDefn, grpcHandler) =>
     Object.entries(serviceDefn.methods)
         .reduce(
             (serviceHandler, [methodName, methodDefn]) => {
-                serviceHandler[getMethodKey(methodName)] = newMethodHandler(logger, namespaceName, serviceName, methodName, methodDefn);
+                const methodKey = getMethodKey(methodName);
+                serviceHandler[methodKey] =
+                    (call, callback) =>
+                        grpcHandler(callback, namespaceName, serviceName, methodName, methodDefn.responseType, call.request);
                 return serviceHandler;
             },
             {}
@@ -118,6 +103,5 @@ module.exports = {
     newMessageMap,
     newMethod,
     newService,
-    newServiceHandler,
-    newMethodHandler
+    newServiceHandler
 };
