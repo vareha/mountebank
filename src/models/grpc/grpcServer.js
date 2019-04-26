@@ -9,7 +9,7 @@ function create(options, logger, responseFn) {
     const Q = require('q'),
         deferred = Q.defer(),
         grpc = require('grpc'),
-        protobufjs = require("protobufjs"),
+        protobufjs = require('protobufjs'),
         connections = {},
         grpcParsing = require('./grpcParsing'),
         getServices = grpcParsing.getServices,
@@ -17,36 +17,36 @@ function create(options, logger, responseFn) {
         createService = grpcParsing.createService,
         createServiceHandler = grpcParsing.createServiceHandler,
         server = new grpc.Server(),
-        target = options.host + ":" + options.port,
-        credentials = grpc.ServerCredentials.createInsecure() // FIXME
+        target = options.host + ':' + options.port,
+        credentials = grpc.ServerCredentials.createInsecure(); // FIXME
 
     const grpcHandler = (callback, namespaceName, serviceName, methodName, responseType, request) =>
         require('./grpcRequest')
             .createFrom(namespaceName, serviceName, methodName, responseType, request)
             .then(grpcRequest => {
-                logger.debug("Request: %s", JSON.stringify(grpcRequest));
+                logger.debug('Request: %s', JSON.stringify(grpcRequest));
                 // pass req to responseFn to see if it matches our predicates
                 return responseFn(grpcRequest);
             })
             .then(response => {
                 if (response.response) {
-                    logger.debug("Response: %s", JSON.stringify(response));
+                    logger.debug('Response: %s', JSON.stringify(response));
                     return callback(null, response.response);
                 }
                 if (response.error) {
-                    const error = { code: grpc.status.UNKNOWN, message: "", ...response.error };
-                    logger.debug("Error response: %s", JSON.stringify(error));
+                    const error = { code: grpc.status.UNKNOWN, message: '', ...response.error };
+                    logger.debug('Error response: %s', JSON.stringify(error));
                     return callback(error);
                 }
                 if (!Object.keys(response).length) {
                     // empty default object => empty response
-                    logger.debug("Empty response");
+                    logger.debug('Empty response');
                     return callback(null, response);
                 }
                 throw Error(`Response ${JSON.stringify(response)} is invalid`);
             })
             .catch(err => {
-                logger.error("Error during GRPC request handling: %s", err);
+                logger.error('Error during GRPC request handling: %s', err);
                 return callback({ code: grpc.status.INTERNAL, message: err.toString() });
             });
 
@@ -56,7 +56,7 @@ function create(options, logger, responseFn) {
         // use protobuf.js to parse the namespace
         const toParse = {
             // protobuf.js requires a top level key of "nested"
-            nested: namespaceDefn,
+            nested: namespaceDefn
         };
         const namespace = protobufjs.Namespace.fromJSON(namespaceName, toParse);
 
@@ -67,7 +67,7 @@ function create(options, logger, responseFn) {
         getServices(namespace).forEach(([serviceName, serviceDefn]) => {
             const service = createService(namespaceName, serviceName, serviceDefn, messageMap),
                 handler = createServiceHandler(namespaceName, serviceName, serviceDefn, grpcHandler);
-            logger.info("Adding service: %s.%s", namespaceName, serviceName);
+            logger.info('Adding service: %s.%s', namespaceName, serviceName);
             server.addService(service, handler);
         });
     });
@@ -75,10 +75,10 @@ function create(options, logger, responseFn) {
     // bind to our port, start the server and return our details
     server.bindAsync(target, credentials, (error, port) => {
         if (error) {
-            return deferred.reject(error)
+            return deferred.reject(error);
         }
-        server.start()
-        deferred.resolve({
+        server.start();
+        return deferred.resolve({
             port: port,
             metadata: {},
             proxy: {},

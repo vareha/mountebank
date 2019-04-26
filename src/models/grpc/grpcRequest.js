@@ -5,14 +5,14 @@
  * @module
  */
 
-function createFrom(namespaceName, serviceName, methodName, responseType, request) {
+const createFrom = (namespaceName, serviceName, methodName, responseType, request) => {
     const Q = require('q');
     return Q({
-        methodName: [ namespaceName, serviceName, methodName ].join("."),
-        responseType: [ namespaceName, responseType ].join("."),
+        methodName: [namespaceName, serviceName, methodName].join('.'),
+        responseType: [namespaceName, responseType].join('.'),
         request: request
     });
-}
+};
 
 module.exports = {
     createFrom
