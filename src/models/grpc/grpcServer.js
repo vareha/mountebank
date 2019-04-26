@@ -29,14 +29,21 @@ function create(options, logger, responseFn) {
                 return responseFn(grpcRequest);
             })
             .then(response => {
-                logger.debug("Response: %s", JSON.stringify(response));
-                if (response.error != null) {
-                    const error = { code: grpc.status.UNKNOWN, message: "", ...response.error };
-                    return callback(error);
-                }
                 if (response.response != null) {
+                    logger.debug("Response: %s", JSON.stringify(response));
                     return callback(null, response.response);
                 }
+                if (response.error != null) {
+                    const error = { code: grpc.status.UNKNOWN, message: "", ...response.error };
+                    logger.debug("Error response: %s", JSON.stringify(error));
+                    return callback(error);
+                }
+                if (!Object.keys(response).length) {
+                    // empty default object => empty response
+                    logger.debug("Empty response");
+                    return callback(null, response);
+                }
+                throw Error(`Response ${JSON.stringify(response)} is invalid`);
             })
             .catch(err => {
                 logger.error("Error during GRPC request handling: %s", err);
