@@ -28,13 +28,19 @@ function create(options, logger, responseFn) {
                 // pass req to responseFn to see if it matches our predicates
                 return responseFn(grpcRequest);
             })
-            .catch(err => {
-                logger.error("Error during GRPC request build: %s", err);
-                callback({ code: grpc.status.INTERNAL, message: err.toString() });
-            })
             .then(response => {
                 logger.debug("Response: %s", JSON.stringify(response));
-                callback(null, response);
+                if (response.error != null) {
+                    const error = { code: grpc.status.UNKNOWN, message: "", ...response.error };
+                    return callback(error);
+                }
+                if (response.response != null) {
+                    return callback(null, response.response);
+                }
+            })
+            .catch(err => {
+                logger.error("Error during GRPC request handling: %s", err);
+                return callback({ code: grpc.status.INTERNAL, message: err.toString() });
             });
 
     // parse our proto services and types from the imposter.json
