@@ -20,7 +20,7 @@ const getServices = pbjsNamespace =>
  * @param {Namespace} pbjsNamespace A protobuf.js namespace.
  * @returns {Object} A map of message names to protobuf.js types.
  */
-const newMessageMap = pbjsNamespace =>
+const createMessageMap = pbjsNamespace =>
     getMessages(pbjsNamespace)
         .reduce(
             (messageMap, [messageName, _]) => {
@@ -47,7 +47,7 @@ const serialize = (toSerialize, messageType) => {
  * @param {Object} methodDefn The method definition, which should define both requestType and responseType.
  * @returns {Object} A valid method object.
  */
-const newMethod = (namespaceName, serviceName, methodName, messageMap, methodDefn) => {
+const createMethod = (namespaceName, serviceName, methodName, messageMap, methodDefn) => {
     const requestType = messageMap[methodDefn.requestType],
         responseType = messageMap[methodDefn.responseType];
     if (!requestType) {
@@ -74,12 +74,12 @@ const getMethodKey = methodName => methodName[0].toLowerCase() + methodName.subs
  * @param {Object} messageMap A map of message names to protobuf.js types.
  * @returns {Object} A valid service object, ready to be passed to grpc.Server.addService().
  */
-const newService = (namespaceName, serviceName, serviceDefn, messageMap) =>
+const createService = (namespaceName, serviceName, serviceDefn, messageMap) =>
     Object.entries(serviceDefn.methods)
         .reduce(
             (service, [methodName, methodDefn]) => {
                 const methodKey = getMethodKey(methodName);
-                service[methodKey] = newMethod(namespaceName, serviceName, methodName, messageMap, methodDefn);
+                service[methodKey] = createMethod(namespaceName, serviceName, methodName, messageMap, methodDefn);
                 return service;
             },
             {}
@@ -92,7 +92,7 @@ const newService = (namespaceName, serviceName, serviceDefn, messageMap) =>
  * @param {function} grpcHandler A function to be called to handle GRPC calls.
  * @returns {Object} A map of service names to functions, ready to be passed to grpc.Server.addService().
  */
-const newServiceHandler = (namespaceName, serviceName, serviceDefn, grpcHandler) =>
+const createServiceHandler = (namespaceName, serviceName, serviceDefn, grpcHandler) =>
     Object.entries(serviceDefn.methods)
         .reduce(
             (serviceHandler, [methodName, methodDefn]) => {
@@ -108,8 +108,8 @@ const newServiceHandler = (namespaceName, serviceName, serviceDefn, grpcHandler)
 module.exports = {
     getMessages,
     getServices,
-    newMessageMap,
-    newMethod,
-    newService,
-    newServiceHandler
+    createMessageMap,
+    createMethod,
+    createService,
+    createServiceHandler
 };

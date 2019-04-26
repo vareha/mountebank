@@ -13,9 +13,9 @@ function create(options, logger, responseFn) {
         connections = {},
         grpcParsing = require('./grpcParsing'),
         getServices = grpcParsing.getServices,
-        newMessageMap = grpcParsing.newMessageMap,
-        newService = grpcParsing.newService,
-        newServiceHandler = grpcParsing.newServiceHandler,
+        createMessageMap = grpcParsing.createMessageMap,
+        createService = grpcParsing.createService,
+        createServiceHandler = grpcParsing.createServiceHandler,
         server = new grpc.Server(),
         target = options.host + ":" + options.port,
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
@@ -61,12 +61,12 @@ function create(options, logger, responseFn) {
         const namespace = protobufjs.Namespace.fromJSON(namespaceName, toParse);
 
         // build a map of message names to parsed types
-        const messageMap = newMessageMap(namespace);
+        const messageMap = createMessageMap(namespace);
 
         // add each service and corresponding handler
         getServices(namespace).forEach(([serviceName, serviceDefn]) => {
-            const service = newService(namespaceName, serviceName, serviceDefn, messageMap),
-                handler = newServiceHandler(namespaceName, serviceName, serviceDefn, grpcHandler);
+            const service = createService(namespaceName, serviceName, serviceDefn, messageMap),
+                handler = createServiceHandler(namespaceName, serviceName, serviceDefn, grpcHandler);
             logger.info("Adding service: %s.%s", namespaceName, serviceName);
             server.addService(service, handler);
         });
