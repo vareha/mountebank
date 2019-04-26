@@ -8,10 +8,8 @@
 function createFrom(namespaceName, serviceName, methodName, responseType, request) {
     const Q = require('q');
     return Q({
-        namespaceName: namespaceName,
-        serviceName: serviceName,
-        methodName: methodName,
-        responseType: responseType,
+        methodName: [ namespaceName, serviceName, methodName ].join("."),
+        responseType: [ namespaceName, responseType ].join("."),
         request: request
     });
 }
