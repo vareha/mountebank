@@ -37,7 +37,7 @@ const serialize = (toSerialize, messageType) => {
         throw Error(err);
     }
     return messageType.encode(toSerialize).finish();
-}
+};
 
 /**
  * @param {string} namespaceName The name of the namespace that owns the service.
@@ -63,7 +63,7 @@ const createMethod = (namespaceName, serviceName, methodName, messageMap, method
         requestDeserialize: request => requestType.decode(request),
         responseSerialize: response => serialize(response, responseType)
     };
-}
+};
 
 const getMethodKey = methodName => methodName[0].toLowerCase() + methodName.substring(1);
 
