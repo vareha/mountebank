@@ -20,19 +20,22 @@ function create(options, logger, responseFn) {
         target = options.host + ":" + options.port,
         credentials = grpc.ServerCredentials.createInsecure() // FIXME
 
-    const grpcHandler = (callback, namespaceName, serviceName, methodName, responseType, request) => {
-        logger.info("Called: %s", JSON.stringify([namespaceName, serviceName, methodName, responseType, request]));
-        if (namespaceName == "helloworld" && serviceName == "Greeter" && methodName == "SayHello") {
-            return callback(null, { message: "hello john smith" });
-        }
-        if (responseType == "HelloReply") {
-            return callback(null, { message: "hello john smith" });
-        }
-        return callback({
-            code: grpc.status.UNIMPLEMENTED,
-            message: "No matching predicates found for request",
-        });
-    }
+    const grpcHandler = (callback, namespaceName, serviceName, methodName, responseType, request) =>
+        require('./grpcRequest')
+            .createFrom(namespaceName, serviceName, methodName, responseType, request)
+            .then(grpcRequest => {
+                logger.debug("Request: %s", JSON.stringify(grpcRequest));
+                // pass req to responseFn to see if it matches our predicates
+                return responseFn(grpcRequest);
+            })
+            .catch(err => {
+                logger.error("Error during GRPC request build: %s", err);
+                callback({ code: grpc.status.INTERNAL, message: err.toString() });
+            })
+            .then(response => {
+                logger.debug("Response: %s", JSON.stringify(response));
+                callback(null, response);
+            });
 
     // parse our proto services and types from the imposter.json
     const protos = options.protos || [];
