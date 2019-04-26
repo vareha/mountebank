@@ -43,13 +43,13 @@ const serialize = (toSerialize, messageType) => {
 
 /**
  * @param {Object} messageMap A map of message names to protobuf.js types.
- * @param {string} namespace The namespace that owns the service.
+ * @param {string} namespaceName The name of the namespace that owns the service.
  * @param {string} serviceName The name of the service that owns the method.
  * @param {string} methodName The name of the method.
  * @param {Object} methodDefn The method definition, which should define both requestType and responseType.
  * @returns {Object} A valid method object.
  */
-const newMethod = (messageMap, namespace, serviceName, methodName, methodDefn) => {
+const newMethod = (messageMap, namespaceName, serviceName, methodName, methodDefn) => {
     const requestType = messageMap[methodDefn.requestType],
         responseType = messageMap[methodDefn.responseType];
     if (!requestType) {
@@ -59,7 +59,7 @@ const newMethod = (messageMap, namespace, serviceName, methodName, methodDefn) =
         throw Error(`No message defined for ${methodDefn.responseType}`);
     }
     return {
-        path: `/${namespace}.${serviceName}/${methodName}`,
+        path: `/${namespaceName}.${serviceName}/${methodName}`,
         requestStream: false,
         responseStream: false,
         requestDeserialize: request => requestType.decode(request),
@@ -71,25 +71,25 @@ const getMethodKey = methodName => methodName[0].toLowerCase() + methodName.subs
 
 /**
  * @param {Object} messageMap A map of message names to protobuf.js types.
- * @param {string} namespace The namespace that owns the service.
+ * @param {string} namespaceName The name of the namespace that owns the service.
  * @param {string} serviceName The name of the service.
  * @param {Object} serviceDefn The service definition, which should define an array of methods.
  * @returns {Object} A valid service object, ready to be passed to grpc.Server.addService().
  */
-const newService = (messageMap, namespace, serviceName, serviceDefn) =>
+const newService = (messageMap, namespaceName, serviceName, serviceDefn) =>
     Object.entries(serviceDefn.methods)
         .reduce(
             (service, [methodName, methodDefn]) => {
-                service[getMethodKey(methodName)] = newMethod(messageMap, namespace, serviceName, methodName, methodDefn);
+                service[getMethodKey(methodName)] = newMethod(messageMap, namespaceName, serviceName, methodName, methodDefn);
                 return service;
             },
             {}
         );
 
-const newMethodHandler = (logger, namespace, serviceName, methodName, methodDefn) => {
+const newMethodHandler = (logger, namespaceName, serviceName, methodName, methodDefn) => {
     return (call, callback) => {
-        logger.info("Called: %s", JSON.stringify([call.request, namespace, serviceName, methodName, methodDefn.responseType]));
-        if (namespace == "helloworld" && serviceName == "Greeter" && methodName == "SayHello") {
+        logger.info("Called: %s", JSON.stringify([call.request, namespaceName, serviceName, methodName, methodDefn.responseType]));
+        if (namespaceName == "helloworld" && serviceName == "Greeter" && methodName == "SayHello") {
             return callback(null, { message: "hello john smith" });
         }
         if (methodDefn.responseType == "HelloReply") {
@@ -102,11 +102,11 @@ const newMethodHandler = (logger, namespace, serviceName, methodName, methodDefn
     };
 };
 
-const newServiceHandler = (logger, namespace, serviceName, serviceDefn) =>
+const newServiceHandler = (logger, namespaceName, serviceName, serviceDefn) =>
     Object.entries(serviceDefn.methods)
         .reduce(
             (serviceHandler, [methodName, methodDefn]) => {
-                serviceHandler[getMethodKey(methodName)] = newMethodHandler(logger, namespace, serviceName, methodName, methodDefn);
+                serviceHandler[getMethodKey(methodName)] = newMethodHandler(logger, namespaceName, serviceName, methodName, methodDefn);
                 return serviceHandler;
             },
             {}
