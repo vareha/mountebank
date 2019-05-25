@@ -109,7 +109,6 @@ module.exports = {
     getMessages,
     getServices,
     createMessageMap,
-    createMethod,
     createService,
     createServiceHandler
 };
