@@ -83,67 +83,73 @@ describe('grpcParsing', () => {
     });
 
     describe('#createService', () => {
-        it('should return a valid service object', () => {
-            // service with one method, "SayHello"
-            // "SayHello" takes "HelloRequest" and returns "HelloReply"
-            const serviceDefn = {
-                methods: { SayHello: { requestType: 'HelloRequest', responseType: 'HelloReply' } }
-            };
-            // map of messages to pbjs types
-            // request types need a decode() function
-            // response types need both verify() and encode() functions
-            const messageMap = {
-                HelloRequest: { decode: toDecode => String.fromCharCode.apply(null, toDecode) },
-                HelloReply: {
-                    verify: () => null, // return null = no error = valid message
-                    encode: toEncode => {
-                        return {
-                            finish: () => JSON.stringify(toEncode)
-                        }
-                    },
+        // service with one method, "SayHello"
+        // "SayHello" takes "HelloRequest" and returns "HelloReply"
+        const serviceDefn = {
+            methods: { SayHello: { requestType: 'HelloRequest', responseType: 'HelloReply' } }
+        };
+
+        // map of messages to pbjs types
+        // request types need a decode() function
+        // response types need both verify() and encode() functions
+        const messageMap = {
+            HelloRequest: { decode: toDecode => String.fromCharCode.apply(null, toDecode) },
+            HelloReply: {
+                verify: () => null, // return null = no error = valid message
+                encode: toEncode => {
+                    return {
+                        finish: () => JSON.stringify(toEncode)
+                    }
                 },
-            };
-            const service = grpcParsing.createService('helloworld', 'SayHello', serviceDefn, messageMap);
-            const sayHello = service['sayHello'];
-            // path should be correct
+            },
+        };
+
+        const service = grpcParsing.createService('helloworld', 'SayHello', serviceDefn, messageMap);
+        const sayHello = service['sayHello'];
+
+        it('returned service obj should have the correct path', () => {
             assert.strictEqual(sayHello.path, '/helloworld.SayHello/SayHello');
-            // requestDeserialize should call the decode fn defined by HelloRequest
+        });
+
+        it('requestDeserialize should call the decode fn defined by HelloRequest ', () => {
             assert.strictEqual(
                 sayHello.requestDeserialize([0x70, 0x62, 0x6d, 0x73, 0x67]),
                 'pbmsg'
             );
-            // responseSerialize should call the encode fn defined by HelloReply
+        });
+
+        it('responseSerialize should call the encode fn defined by HelloReply', () => {
             assert.strictEqual(
                 sayHello.responseSerialize({ message: 'hello world' }),
                 '{"message":"hello world"}'
             );
         });
-    });
+});
 
-    describe('#createServiceHandler', () => {
-        it('should return a map of a map of service names to handler functions', () => {
-            // service with one method, 'SayHello'
-            // 'SayHello' takes 'HelloRequest' and returns 'HelloReply'
-            const serviceDefn = {
-                methods: { SayHello: { requestType: 'HelloRequest', responseType: 'HelloReply' } }
-            };
-            let handlerCall;
-            const grpcHandler = (_, ns, svc, method, requestType, request) => {
-                handlerCall = { ns, svc, method, requestType, request };
-            }
-            const handler = grpcParsing.createServiceHandler('helloworld', 'Greeter', serviceDefn, grpcHandler);
-            const call = { request: { 'name': 'John Smith' } };
-            const callback = () => { };
-            // calling sayHello should result in our handler being called
-            handler.sayHello(call, callback);
-            const expected = {
-                ns: 'helloworld',
-                svc: 'Greeter',
-                method: 'SayHello',
-                request: { 'name': 'John Smith' },
-                requestType: 'HelloReply',
-            };
-            assert.deepEqual(handlerCall, expected);
-        });
+describe('#createServiceHandler', () => {
+    it('should return a map of a map of service names to handler functions', () => {
+        // service with one method, 'SayHello'
+        // 'SayHello' takes 'HelloRequest' and returns 'HelloReply'
+        const serviceDefn = {
+            methods: { SayHello: { requestType: 'HelloRequest', responseType: 'HelloReply' } }
+        };
+        let handlerCall;
+        const grpcHandler = (_, ns, svc, method, requestType, request) => {
+            handlerCall = { ns, svc, method, requestType, request };
+        }
+        const handler = grpcParsing.createServiceHandler('helloworld', 'Greeter', serviceDefn, grpcHandler);
+        const call = { request: { 'name': 'John Smith' } };
+        const callback = () => { };
+        // calling sayHello should result in our handler being called
+        handler.sayHello(call, callback);
+        const expected = {
+            ns: 'helloworld',
+            svc: 'Greeter',
+            method: 'SayHello',
+            request: { 'name': 'John Smith' },
+            requestType: 'HelloReply',
+        };
+        assert.deepEqual(handlerCall, expected);
     });
+});
 });
