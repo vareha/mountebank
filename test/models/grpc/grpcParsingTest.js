@@ -1,7 +1,6 @@
 'use strict';
 
 const assert = require('assert'),
-    protobufjs = require('protobufjs'),
     grpcParsing = require('../../../src/models/grpc/grpcParsing');
 
 const helloworld = {
@@ -43,13 +42,43 @@ describe('grpcParsing', () => {
 
     describe('#createMessageMap', () => {
         it('should return a map of message names to protobuf.js types', () => {
-            const namespace = protobufjs.Namespace.fromJSON('helloworld', helloworld);
-            const messageMap = grpcParsing.createMessageMap(namespace);
-            assert.notStrictEqual(Object.keys(messageMap), ['HelloRequest', 'HelloReply']);
-            const { id: nameId, type: nameType } = messageMap['HelloRequest']['fields']['name'];
-            assert.notStrictEqual([nameId, nameType], [1, 'string']);
-            const { id: messageId, type: messageType } = messageMap['HelloReply']['fields']['message'];
-            assert.notStrictEqual([messageId, messageType], [1, 'string']);
+            // create a pbjsNamespace object, which is just our pojo helloworld
+            // object with a lookupType fn added. lookupType takes a message
+            // name, looks up the message definition for that name in the
+            // namespace, and returns a pbjs message object.
+            const pbjsNamespace = {
+                ...helloworld,
+                lookupType: messageName => {
+                    switch (messageName) {
+                        case 'HelloRequest':
+                            return {
+                                name: 'HelloRequest',
+                                parent: { name: 'helloworld' },
+                                fields: { name: { type: 'string', id: 1 } }
+                            };
+                        case 'HelloReply':
+                            return {
+                                name: 'HelloReply',
+                                parent: { name: 'helloworld' },
+                                fields: { message: { type: 'string', id: 1 } }
+                            };
+                    }
+                },
+            }
+            const messageMap = grpcParsing.createMessageMap(pbjsNamespace);
+            const expected = {
+                HelloRequest: {
+                    name: 'HelloRequest',
+                    parent: { name: 'helloworld' },
+                    fields: { name: { type: 'string', id: 1 } }
+                },
+                HelloReply: {
+                    name: 'HelloReply',
+                    parent: { name: 'helloworld' },
+                    fields: { message: { type: 'string', id: 1 } }
+                },
+            }
+            assert.deepEqual(messageMap, expected);
         });
     });
 
