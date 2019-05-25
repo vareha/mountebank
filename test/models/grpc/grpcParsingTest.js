@@ -27,7 +27,7 @@ describe('grpcParsing', () => {
             assert.deepEqual(messages, expected);
         });
     });
-    
+
     describe('#getServices', () => {
         it('should return only the services', () => {
             const services = grpcParsing.getServices(helloworld);
@@ -50,6 +50,44 @@ describe('grpcParsing', () => {
             assert.notStrictEqual([nameId, nameType], [1, 'string']);
             const { id: messageId, type: messageType } = messageMap['HelloReply']['fields']['message'];
             assert.notStrictEqual([messageId, messageType], [1, 'string']);
+        });
+    });
+
+    describe('#createService', () => {
+        it('should return a valid service object', () => {
+            // service with one method, "SayHello"
+            // "SayHello" takes "HelloRequest" and returns "HelloReply"
+            const serviceDefn = {
+                methods: { SayHello: { requestType: 'HelloRequest', responseType: 'HelloReply' } }
+            };
+            // map of messages to pbjs types
+            // request types need a decode() function
+            // response types need both verify() and encode() functions
+            const messageMap = {
+                HelloRequest: { decode: toDecode => String.fromCharCode.apply(null, toDecode) },
+                HelloReply: {
+                    verify: () => null, // return null = no error = valid message
+                    encode: toEncode => {
+                        return {
+                            finish: () => JSON.stringify(toEncode)
+                        }
+                    },
+                },
+            };
+            const service = grpcParsing.createService('helloworld', 'SayHello', serviceDefn, messageMap);
+            const sayHello = service['sayHello'];
+            // path should be correct
+            assert.strictEqual(sayHello.path, '/helloworld.SayHello/SayHello');
+            // requestDeserialize should call the decode fn defined by HelloRequest
+            assert.strictEqual(
+                sayHello.requestDeserialize([0x70, 0x62, 0x6d, 0x73, 0x67]),
+                'pbmsg'
+            );
+            // responseSerialize should call the encode fn defined by HelloReply
+            assert.strictEqual(
+                sayHello.responseSerialize({ message: 'hello world' }),
+                '{"message":"hello world"}'
+            );
         });
     });
 });
