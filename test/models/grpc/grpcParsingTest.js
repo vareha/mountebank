@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('assert'),
+    protobufjs = require('protobufjs'),
     grpcParsing = require('../../../src/models/grpc/grpcParsing');
 
 const helloworld = {
@@ -37,6 +38,18 @@ describe('grpcParsing', () => {
                 ],
             ];
             assert.deepEqual(services, expected);
+        });
+    });
+
+    describe('#createMessageMap', () => {
+        it('should return a map of message names to protobuf.js types', () => {
+            const namespace = protobufjs.Namespace.fromJSON('helloworld', helloworld);
+            const messageMap = grpcParsing.createMessageMap(namespace);
+            assert.notStrictEqual(Object.keys(messageMap), ['HelloRequest', 'HelloReply']);
+            const { id: nameId, type: nameType } = messageMap['HelloRequest']['fields']['name'];
+            assert.notStrictEqual([nameId, nameType], [1, 'string']);
+            const { id: messageId, type: messageType } = messageMap['HelloReply']['fields']['message'];
+            assert.notStrictEqual([messageId, messageType], [1, 'string']);
         });
     });
 });
