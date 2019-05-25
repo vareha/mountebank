@@ -26,4 +26,17 @@ describe('grpcParsing', () => {
             assert.deepEqual(messages, expected);
         });
     });
+    
+    describe('#getServices', () => {
+        it('should return only the services', () => {
+            const services = grpcParsing.getServices(helloworld);
+            const expected = [
+                [
+                    'Greeter',
+                    { methods: { SayHello: { requestType: 'HelloRequest', responseType: 'HelloReply' } } }
+                ],
+            ];
+            assert.deepEqual(services, expected);
+        });
+    });
 });
