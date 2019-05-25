@@ -90,4 +90,31 @@ describe('grpcParsing', () => {
             );
         });
     });
+
+    describe('#createServiceHandler', () => {
+        it('should return a map of a map of service names to handler functions', () => {
+            // service with one method, 'SayHello'
+            // 'SayHello' takes 'HelloRequest' and returns 'HelloReply'
+            const serviceDefn = {
+                methods: { SayHello: { requestType: 'HelloRequest', responseType: 'HelloReply' } }
+            };
+            let handlerCall;
+            const grpcHandler = (_, ns, svc, method, requestType, request) => {
+                handlerCall = { ns, svc, method, requestType, request };
+            }
+            const handler = grpcParsing.createServiceHandler('helloworld', 'Greeter', serviceDefn, grpcHandler);
+            const call = { request: { 'name': 'John Smith' } };
+            const callback = () => { };
+            // calling sayHello should result in our handler being called
+            handler.sayHello(call, callback);
+            const expected = {
+                ns: 'helloworld',
+                svc: 'Greeter',
+                method: 'SayHello',
+                request: { 'name': 'John Smith' },
+                requestType: 'HelloReply',
+            };
+            assert.deepEqual(handlerCall, expected);
+        });
+    });
 });
