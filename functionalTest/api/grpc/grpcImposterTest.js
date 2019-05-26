@@ -2,7 +2,7 @@
 
 const assert = require('assert'),
     api = require('../api').create(),
-    // client = require('./smtpClient'),
+    helloworldClient = require('./helloworldClient'),
     promiseIt = require('../../testHelpers').promiseIt,
     port = api.port + 1,
     timeout = parseInt(process.env.MB_SLOW_TEST_TIMEOUT || 2000);
@@ -52,6 +52,28 @@ describe('grpc imposter', () => {
             return api.post('/imposters', helloworldImposter).then(response => {
                 assert.strictEqual(response.statusCode, 201);
                 assert.ok(response.body.port == 4545);
+            }).finally(() => api.del('/imposters'));
+        });
+
+        promiseIt('should return response for method match', () => {
+            const imposter = {
+                ...helloworldImposter,
+                stubs: [
+                    {
+                        predicates: [{ equals: { methodName: "helloworld.Greeter.SayHello" } }],
+                        responses: [{ is: { response: { message: "Howdy stranger!" } } }]
+                    }
+                ]
+            };
+
+            return api.post('/imposters', imposter).then(response => {
+                assert.strictEqual(response.statusCode, 201);
+                assert.ok(response.body.port == 4545);
+            }).then(_ => {
+                return helloworldClient.send({ name: 'The Man with No Name' }, 4545, '127.0.0.1');
+            }).then(response => {
+                const expected = { message: 'Howdy stranger!' };
+                assert.deepEqual(response, expected);
             }).finally(() => api.del('/imposters'));
         });
     });
