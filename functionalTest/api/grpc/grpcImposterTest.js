@@ -76,5 +76,30 @@ describe('grpc imposter', () => {
                 assert.deepEqual(response, expected);
             }).finally(() => api.del('/imposters'));
         });
+
+        promiseIt('should return response for message match', () => {
+            const imposter = {
+                ...helloworldImposter,
+                stubs: [
+                    {
+                        predicates: [
+                            { equals: { responseType: "helloworld.HelloReply" } },
+                            { equals: { request: { name: "Clint" } } }
+                        ],
+                        responses: [{ is: { response: { message: "Hello Mr Eastwood." } } }]
+                    }
+                ]
+            };
+
+            return api.post('/imposters', imposter).then(response => {
+                assert.strictEqual(response.statusCode, 201);
+                assert.ok(response.body.port == 4545);
+            }).then(_ => {
+                return helloworldClient.send({ name: 'Clint' }, 4545, '127.0.0.1');
+            }).then(response => {
+                const expected = { message: 'Hello Mr Eastwood.' };
+                assert.deepEqual(response, expected);
+            }).finally(() => api.del('/imposters'));
+        });
     });
 });
