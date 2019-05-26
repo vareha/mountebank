@@ -43,11 +43,14 @@ describe('grpcParsing', () => {
     describe('#createMessageMap', () => {
         it('should return a map of message names to protobuf.js types', () => {
             // create a pbjsNamespace object, which is just our pojo helloworld
-            // object with a lookupType fn added. lookupType takes a message
-            // name, looks up the message definition for that name in the
-            // namespace, and returns a pbjs message object.
+            // object with a lookupType fn added. 
             const pbjsNamespace = {
                 ...helloworld,
+                // lookupType takes a message name, looks up the message
+                // definition for that name in the namespace, and returns a pbjs
+                // message object. the real protobuf.js returns significantly
+                // more complicated message definition objects, but that's
+                // irrelevant for our test.
                 lookupType: messageName => {
                     switch (messageName) {
                         case 'HelloRequest':
@@ -93,11 +96,17 @@ describe('grpcParsing', () => {
         // request types need a decode() function
         // response types need both verify() and encode() functions
         const messageMap = {
-            HelloRequest: { decode: toDecode => String.fromCharCode.apply(null, toDecode) },
+            HelloRequest: {
+                // decode takes a binary pb message and returns a parsed message
+                decode: toDecode => String.fromCharCode.apply(null, toDecode)
+            },
             HelloReply: {
-                verify: () => null, // return null = no error = valid message
+                // verify returns an error if toEncode is invalid
+                verify: _ => null, // no error => valid message
+                // toEncode returns an object with a "finish" method
                 encode: toEncode => {
                     return {
+                        // finish returns the binary pb encoding of the message
                         finish: () => JSON.stringify(toEncode)
                     }
                 },
@@ -105,24 +114,19 @@ describe('grpcParsing', () => {
         };
 
         const service = grpcParsing.createService('helloworld', 'SayHello', serviceDefn, messageMap);
-        const sayHello = service['sayHello'];
 
         it('returned service obj should have the correct path', () => {
-            assert.strictEqual(sayHello.path, '/helloworld.SayHello/SayHello');
+            assert.strictEqual(service['sayHello'].path, '/helloworld.SayHello/SayHello');
         });
 
         it('requestDeserialize should call the decode fn defined by HelloRequest ', () => {
-            assert.strictEqual(
-                sayHello.requestDeserialize([0x70, 0x62, 0x6d, 0x73, 0x67]),
-                'pbmsg'
-            );
+            const deserialized = service['sayHello'].requestDeserialize([0x70, 0x62, 0x6d, 0x73, 0x67]);
+            assert.strictEqual(deserialized, 'pbmsg');
         });
 
         it('responseSerialize should call the encode fn defined by HelloReply', () => {
-            assert.strictEqual(
-                sayHello.responseSerialize({ message: 'hello world' }),
-                '{"message":"hello world"}'
-            );
+            const serialized = service['sayHello'].responseSerialize({ message: 'hello world' });
+            assert.strictEqual(serialized, '{"message":"hello world"}');
         });
     });
 
@@ -133,14 +137,18 @@ describe('grpcParsing', () => {
             const serviceDefn = {
                 methods: { SayHello: { requestType: 'HelloRequest', responseType: 'HelloReply' } }
             };
+
+            // mock grpc handler that just records its call
             let handlerCall;
             const grpcHandler = (_, ns, svc, method, requestType, request) => {
                 handlerCall = { ns, svc, method, requestType, request };
             }
+
             const handler = grpcParsing.createServiceHandler('helloworld', 'Greeter', serviceDefn, grpcHandler);
+
+            // calling sayHello should result in our handler being called
             const call = { request: { 'name': 'John Smith' } };
             const callback = () => { };
-            // calling sayHello should result in our handler being called
             handler.sayHello(call, callback);
             const expected = {
                 ns: 'helloworld',
