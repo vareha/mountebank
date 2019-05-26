@@ -106,6 +106,23 @@ function create (stubs, proxy, callbackURL) {
         const predicates = [];
 
         matchers.forEach(matcher => {
+            if (matcher.inject) {
+                // eslint-disable-next-line no-unused-vars
+                const config = { request, logger },
+                    injected = `(${matcher.inject})(config);`,
+                    errors = require('../util/errors');
+                try {
+                    predicates.push(...eval(injected));
+                }
+                catch (error) {
+                    logger.error(`injection X=> ${error}`);
+                    logger.error(`    source: ${JSON.stringify(injected)}`);
+                    logger.error(`    request: ${JSON.stringify(request)}`);
+                    throw errors.InjectionError('invalid predicateGenerator injection', { source: injected, data: error.message });
+                }
+                return;
+            }
+
             const basePredicate = {};
             let valueOf = field => field;
 
@@ -225,7 +242,7 @@ function create (stubs, proxy, callbackURL) {
         }
     }
 
-    function proxyAndRecord (responseConfig, request, logger) {
+    function proxyAndRecord (responseConfig, request, logger, requestDetails) {
         const Q = require('q'),
             startTime = new Date(),
             behaviors = require('./behaviors');
@@ -235,7 +252,7 @@ function create (stubs, proxy, callbackURL) {
         }
 
         if (inProcessProxy) {
-            return proxy.to(responseConfig.proxy.to, request, responseConfig.proxy).then(response => {
+            return proxy.to(responseConfig.proxy.to, request, responseConfig.proxy, requestDetails).then(response => {
                 // eslint-disable-next-line no-underscore-dangle
                 response._proxyResponseTime = new Date() - startTime;
 
@@ -250,7 +267,8 @@ function create (stubs, proxy, callbackURL) {
             pendingProxyResolutions[nextProxyResolutionKey] = {
                 responseConfig: responseConfig,
                 request: request,
-                startTime: new Date()
+                startTime: new Date(),
+                requestDetails: requestDetails
             };
             nextProxyResolutionKey += 1;
             return Q({
@@ -261,7 +279,7 @@ function create (stubs, proxy, callbackURL) {
         }
     }
 
-    function processResponse (responseConfig, request, logger, imposterState) {
+    function processResponse (responseConfig, request, logger, imposterState, requestDetails) {
         const Q = require('q'),
             helpers = require('../util/helpers'),
             exceptions = require('../util/errors');
@@ -271,7 +289,7 @@ function create (stubs, proxy, callbackURL) {
             return Q(helpers.clone(responseConfig.is));
         }
         else if (responseConfig.proxy) {
-            return proxyAndRecord(responseConfig, request, logger);
+            return proxyAndRecord(responseConfig, request, logger, requestDetails);
         }
         else if (responseConfig.inject) {
             return inject(request, responseConfig.inject, logger, imposterState).then(Q);
@@ -295,9 +313,10 @@ function create (stubs, proxy, callbackURL) {
      * @param {Object} request - The protocol-specific request object
      * @param {Object} logger - The logger
      * @param {Object} imposterState - The current state for the imposter
+     * @param {Object} options - Additional options not carried with the request
      * @returns {Object} - Promise resolving to the response
      */
-    function resolve (responseConfig, request, logger, imposterState) {
+    function resolve (responseConfig, request, logger, imposterState, options) {
         const Q = require('q'),
             exceptions = require('../util/errors'),
             helpers = require('../util/helpers'),
@@ -308,7 +327,7 @@ function create (stubs, proxy, callbackURL) {
                 { source: responseConfig }));
         }
 
-        return processResponse(responseConfig, helpers.clone(request), logger, imposterState).then(response => {
+        return processResponse(responseConfig, helpers.clone(request), logger, imposterState, options).then(response => {
             // We may have already run the behaviors in the proxy call to persist the decorated response
             // in the new stub. If so, we need to ensure we don't re-run it
             if (responseConfig.proxy) {

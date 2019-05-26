@@ -6,6 +6,7 @@ const assert = require('assert'),
     api = require('../api').create(),
     client = require('./baseHttpClient').create('http'),
     promiseIt = require('../../testHelpers').promiseIt,
+    isInProcessImposter = require('../../testHelpers').isInProcessImposter,
     port = api.port + 1,
     isWindows = require('os').platform().indexOf('win') === 0,
     timeout = isWindows ? 10000 : parseInt(process.env.MB_SLOW_TEST_TIMEOUT || 2000),
@@ -110,6 +111,45 @@ describe('http proxy stubs', function () {
                 return api.del(`/imposters/${port}`);
             }).then(response => {
                 assert.strictEqual(response.body.stubs.length, 4);
+            }).finally(() => api.del('/imposters'));
+    });
+
+    promiseIt('should allow programmatic creation of predicates', function () {
+        const originServerPort = port + 1,
+            originServerStub = { responses: [{ is: { body: 'ORIGIN' } }] },
+            originServerRequest = {
+                protocol: 'http',
+                port: originServerPort,
+                stubs: [originServerStub],
+                name: 'origin server'
+            },
+            fn = function (config) {
+                // Ignore first element; will be empty string in front of root /
+                const pathParts = config.request.path.split('/').splice(1);
+                // eslint-disable-next-line arrow-body-style
+                return pathParts.map(part => { return { contains: { path: part } }; });
+            },
+            proxyDefinition = {
+                to: `http://localhost:${originServerPort}`,
+                predicateGenerators: [{ inject: fn.toString() }]
+            },
+            proxyStub = { responses: [{ proxy: proxyDefinition }] },
+            proxyRequest = { protocol: 'http', port, stubs: [proxyStub], name: 'proxy' };
+
+        return api.post('/imposters', originServerRequest)
+            .then(() => api.post('/imposters', proxyRequest))
+            .then(response => {
+                assert.strictEqual(response.statusCode, 201, JSON.stringify(response.body, null, 2));
+                return client.get('/first/third', port);
+            }).then(response => {
+                assert.strictEqual(response.body, 'ORIGIN');
+                return api.get(`/imposters/${port}`);
+            }).then(response => {
+                const predicates = response.body.stubs[0].predicates;
+                assert.deepEqual(predicates, [
+                    { contains: { path: 'first' } },
+                    { contains: { path: 'third' } }
+                ]);
             }).finally(() => api.del('/imposters'));
     });
 
@@ -680,4 +720,38 @@ describe('http proxy stubs', function () {
             })
             .finally(() => api.del('/imposters'));
     });
+
+    if (isInProcessImposter('http')) {
+        promiseIt('should not add = at end of of query key missing = in original request (issue #410)', function () {
+            const http = require('http'),
+                Q = require('q'),
+                originServerPort = port + 1,
+                originServer = http.createServer((request, response) => {
+                    // Uxe base http library rather than imposter to get raw url
+                    response.end(request.url);
+                });
+
+            originServer.listen(originServerPort);
+            originServer.stop = () => {
+                const deferred = Q.defer();
+                originServer.close(() => {
+                    deferred.resolve({});
+                });
+                return deferred.promise;
+            };
+
+            const proxyStub = { responses: [{ proxy: { to: `http://localhost:${originServerPort}`, mode: 'proxyAlways' } }] },
+                proxyRequest = { protocol: 'http', port, stubs: [proxyStub], name: 'proxy' };
+
+            return api.post('/imposters', proxyRequest).then(response => {
+                assert.strictEqual(response.statusCode, 201, JSON.stringify(response.body, null, 2));
+                return client.get('/path?WSDL', port);
+            }).then(response => {
+                assert.strictEqual(response.body, '/path?WSDL');
+                return client.get('/path?WSDL=', port);
+            }).then(response => {
+                assert.strictEqual(response.body, '/path?WSDL=');
+            }).finally(() => originServer.stop().then(() => api.del('/imposters')));
+        });
+    }
 });

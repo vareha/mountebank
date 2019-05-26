@@ -234,6 +234,19 @@
     <p class='info-icon'>More information: <a href='/docs/api/proxies'>proxies</a></p>
 </div>
 
+<div id='imposter-stubs-responses-proxy-secureProtocol-description'>
+    <p>A legacy mechanism to select the TLS protocol to use. Learn more at the
+    <a href='https://nodejs.org/api/tls.html#tls_tls_connect_options_callback'>node documentation</a>.</p>
+
+    <p class='info-icon'>More information: <a href='/docs/api/proxies'>proxies</a></p>
+</div>
+
+<div id='imposter-stubs-responses-proxy-passphrase-description'>
+    <p>The shared passphrase for a private key</p>
+
+    <p class='info-icon'>More information: <a href='/docs/api/proxies'>proxies</a></p>
+</div>
+
 <div id='imposter-stubs-responses-proxy-addWaitBehavior-description'>
     <p>When this field is true, mountebank will add latency to the saved responses that mirrors the time
     the actual proxied call took. This is useful in load testing when you want to virtualize downstream services
@@ -268,6 +281,9 @@
   <p>Each generator should contain a <code>matches</code> field containing all the request elements you
     want to create predicates for. You can configure the newly created predicate with standard predicate
     parameters. The created predicates will be generally be <code>deepEquals</code> predicates.</p>
+
+  <p>Alternatively, if you need more fine-grained control, you can use an <code>inject</code> field
+  containing a JavaScript function to create the predicates.</p>
 
   <p class='info-icon'>More information: <a href='/docs/api/proxies'>proxies</a></p>
 </div>
