@@ -4,7 +4,7 @@ const grpc = require('grpc'),
     proto = path.join(__dirname, 'helloworld.proto');
 
 const send = (message, port, host) => {
-    protobufjs.load(proto)
+    return protobufjs.load(proto)
         .then(root => {
             const Client = grpc.makeGenericClientConstructor({}),
                 client = new Client(
@@ -26,7 +26,6 @@ const send = (message, port, host) => {
                 greeter = Greeter.create(rpcImpl, false, false);
             return greeter.sayHello(message);
         })
-        .then(response => console.log(response));
 }
 
 module.exports = {
