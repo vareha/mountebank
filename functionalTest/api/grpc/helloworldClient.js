@@ -1,8 +1,10 @@
 const grpc = require('grpc'),
-    protobufjs = require('protobufjs');
+    protobufjs = require('protobufjs'),
+    path = require('path'),
+    proto = path.join(__dirname, 'helloworld.proto');
 
 const send = (message, port, host) => {
-    protobufjs.load('helloworld.proto')
+    protobufjs.load(proto)
         .then(root => {
             const Client = grpc.makeGenericClientConstructor({}),
                 client = new Client(
