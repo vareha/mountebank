@@ -31,6 +31,7 @@ function create(options, logger, responseFn) {
                 return responseFn(grpcRequest);
             })
             .then(response => {
+                response = Object.entries(response).length ? response : options.defaultResponse || {};
                 if (response.response) {
                     logger.debug('Response: %s', JSON.stringify(response));
                     return callback(null, response.response);

@@ -101,5 +101,23 @@ describe('grpc imposter', () => {
                 assert.deepEqual(response, expected);
             }).finally(() => api.del('/imposters'));
         });
+
+        promiseIt('should return a specified error default response', () => {
+            const imposter = {
+                ...helloworldImposter,
+                defaultResponse: { error: { message: 'this is an error', code: 7 } } 
+            };
+
+            return api.post('/imposters', imposter).then(response => {
+                assert.strictEqual(response.statusCode, 201);
+            }).then(_ => {
+                return helloworldClient.send({}, 4545, '127.0.0.1');
+            }).then(res => {
+                assert.fail(); // should have got an error response
+            }).catch(err => {
+                assert.equal(err.code, 7);
+                assert.equal(err.details, 'this is an error');
+            }).finally(() => api.del('/imposters'));
+        });
     });
 });
