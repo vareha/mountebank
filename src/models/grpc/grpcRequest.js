@@ -5,6 +5,13 @@
  * @module
  */
 
+/**
+ * @param {string} namespaceName 
+ * @param {string} serviceName 
+ * @param {string} methodName 
+ * @param {string} responseType 
+ * @param {Object} request 
+ */
 const createFrom = (namespaceName, serviceName, methodName, responseType, request) => {
     const Q = require('q');
     return Q({
