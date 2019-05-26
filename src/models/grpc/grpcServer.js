@@ -17,7 +17,9 @@ function create(options, logger, responseFn) {
         createService = grpcParsing.createService,
         createServiceHandler = grpcParsing.createServiceHandler,
         server = new grpc.Server(),
-        target = options.host + ':' + options.port,
+        host = options.host || '',
+        port = options.port || 4545,
+        target = host + ':' + port,
         credentials = grpc.ServerCredentials.createInsecure(); // FIXME
 
     const grpcHandler = (callback, namespaceName, serviceName, methodName, responseType, request) =>
