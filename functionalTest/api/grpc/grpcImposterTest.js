@@ -67,6 +67,27 @@ describe('grpc imposter', () => {
             }).finally(() => api.del('/imposters'));
         });
 
+        promiseIt('should return empty response if asked to', () => {
+            const imposter = {
+                ...helloworldImposter,
+                stubs: [
+                    {
+                        predicates: [{ equals: { methodName: "helloworld.Greeter.SayHello" } }],
+                        responses: [{ is: { response: {} } }]
+                    }
+                ]
+            };
+
+            return api.post('/imposters', imposter).then(response => {
+                assert.strictEqual(response.statusCode, 201);
+                assert.ok(response.body.port == 4545);
+            }).then(_ => {
+                return helloworldClient.send({ name: 'Bond, James Bond' }, 4545, '127.0.0.1');
+            }).then(response => {
+                assert.deepEqual(response, {});
+            }).finally(() => api.del('/imposters'));
+        });
+
         promiseIt('should return response for method match', () => {
             const imposter = {
                 ...helloworldImposter,
