@@ -55,6 +55,18 @@ describe('grpc imposter', () => {
             }).finally(() => api.del('/imposters'));
         });
 
+        promiseIt('should respond with an unimplemented error on no match', () => {
+            return api.post('/imposters', helloworldImposter).then(response => {
+                assert.strictEqual(response.statusCode, 201);
+                assert.ok(response.body.port == 4545);
+            }).then(_ => {
+                return helloworldClient.send({ name: 'Lionel Richie' }, 4545, '127.0.0.1');
+            }).catch(err => {
+                assert.equal(err.code, 12);
+                assert.equal(err.details, 'unimplemented');
+            }).finally(() => api.del('/imposters'));
+        });
+
         promiseIt('should return response for method match', () => {
             const imposter = {
                 ...helloworldImposter,
