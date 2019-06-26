@@ -42,9 +42,10 @@ function create(options, logger, responseFn) {
                     return callback(error);
                 }
                 if (!Object.keys(response).length) {
-                    // empty default object => empty response
-                    logger.debug('Empty response');
-                    return callback(null, response);
+                    // empty default object => unimplemented error
+                    const error = { code: grpc.status.UNIMPLEMENTED, message: 'unimplemented' };
+                    logger.debug('Unimplemented response');
+                    return callback(error);
                 }
                 throw Error(`Response ${JSON.stringify(response)} is invalid`);
             })
