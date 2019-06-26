@@ -43,7 +43,7 @@ describe('grpcParsing', () => {
     describe('#createMessageMap', () => {
         it('should return a map of message names to protobuf.js types', () => {
             // create a pbjsNamespace object, which is just our pojo helloworld
-            // object with a lookupType fn added. 
+            // object with a lookupType fn added.
             const pbjsNamespace = {
                 ...helloworld,
                 // lookupType takes a message name, looks up the message
