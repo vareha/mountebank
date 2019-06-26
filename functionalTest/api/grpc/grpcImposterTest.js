@@ -105,14 +105,14 @@ describe('grpc imposter', () => {
         promiseIt('should return a specified error default response', () => {
             const imposter = {
                 ...helloworldImposter,
-                defaultResponse: { error: { message: 'this is an error', code: 7 } } 
+                defaultResponse: { error: { message: 'this is an error', code: 7 } }
             };
 
             return api.post('/imposters', imposter).then(response => {
                 assert.strictEqual(response.statusCode, 201);
             }).then(_ => {
                 return helloworldClient.send({}, 4545, '127.0.0.1');
-            }).then(res => {
+            }).then(_ => {
                 assert.fail(); // should have got an error response
             }).catch(err => {
                 assert.equal(err.code, 7);
