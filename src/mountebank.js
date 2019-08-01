@@ -252,6 +252,7 @@ function create (options) {
         '/docs/protocols/https',
         '/docs/protocols/tcp',
         '/docs/protocols/smtp',
+        '/docs/protocols/grpc',
         '/docs/protocols/custom'
     ].forEach(endpoint => {
         app.get(endpoint, (request, response) => {
