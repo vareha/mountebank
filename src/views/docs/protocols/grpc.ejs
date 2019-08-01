@@ -97,4 +97,32 @@ description = 'The GRPC protocol support provided by mountebank'
   </tr>
 </table>
 
+<h2>GRPC Requests</h2>
+
+<table>
+  <tr>
+    <th>Field</th>
+    <th>Description</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td><code>methodName</code></td>
+    <td>The fully qualified method name, represented as
+    "&lt;namespace&gt;.&lt;service&gt;.&lt;method&gt;", e.g.
+    "helloworld.Greeter.SayHello".</td>
+    <td>string</td>
+</tr>
+<tr>
+    <td><code>responseType</code></td>
+    <td>The fully qualified protobuf response type of the request, represented
+    as "&lt;namespace&gt;.&lt;message&gt;", e.g. "helloworld.HelloReply".</td>
+    <td>string</td>
+  </tr>
+  <tr>
+    <td><code>request</code></td>
+    <td>The raw GRPC request object.</td>
+    <td>object</td>
+  </tr>
+</table>
+
 <% include ../../_footer %>
