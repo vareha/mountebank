@@ -69,7 +69,12 @@ description = 'The GRPC protocol support provided by mountebank'
     <td>Valid protocol buffer definitions</td>
     <td>No</td>
     <td>An empty array</td>
-    <td>The list of protocol buffer messages and fields.</td>
+    <td>The list of protocol buffer messages and fields. We use <a
+    href="https://github.com/protobufjs/protobuf.js">protobuf.js</a> for
+    defining these, specifically their <a
+    href="https://github.com/protobufjs/protobuf.js#using-json-descriptors">JSON
+    descriptors</a>. See <a href="#defining-protocol-buffers">Defining Protocol
+    Buffers</a> below.</td>
   </tr>
   <tr>
     <td><code>stubs</code></td>
@@ -77,11 +82,7 @@ description = 'The GRPC protocol support provided by mountebank'
     <td>No</td>
     <td>An empty array</td>
     <td>The list of stubs responsible for matching a request and returning a
-    response. We use <a
-    href="https://github.com/protobufjs/protobuf.js">protobuf.js</a> for
-    defining these, specifically their <a
-    href="https://github.com/protobufjs/protobuf.js#using-json-descriptors">JSON
-    descriptors</a>.</td>
+    response.</td>
   </tr>
   <tr>
     <td><code>defaultResponse</code></td>
@@ -124,5 +125,52 @@ description = 'The GRPC protocol support provided by mountebank'
     <td>object</td>
   </tr>
 </table>
+
+<h2 id='defining-protocol-buffers'>Defining Protocol Buffers</h2>
+
+<p>Protocol Buffers are defined using the JSON descriptor syntax of <a
+href="https://github.com/protobufjs/protobuf.js">protobuf.js</a>: see <a
+href="https://github.com/protobufjs/protobuf.js#using-json-descriptors">https://github.com/protobufjs/protobuf.js#using-json-descriptors</a>
+for the canonical documentation.</p>
+
+<p>In short:</p>
+
+<ul>
+  <li>Your <code>protos</code> imposter key should have one child per protobuf namespace.</li>
+  <li>Within each namespace definition you should have one child per service or message type.</li>
+  <li>Services should have a single child key: <code>methods</code>.</li>
+  <li>Under <code>methods</code> you should define each method for the service.</li>
+  <li>Each method should have a <code>requestType</code> and a <code>responseType</code>.</li>
+  <li>Message types should have a single child key: <code>fields</code>.</li>
+  <li>Under <code>fields</code> you should define each field for the message type.</li>
+  <li>Each field should have a <code>type</code> and an <code>id</code>.</li>
+  <li><code>type</code> defines the data type of the field (e.g. string, int32, bool).</li>
+  <li><code>id</code> defines the numeric id of the field (e.g. 1, 2, 3).</li>
+  <li>Just as with regular protobuf definitions, both client and server must agree on the type and id for each field.</li>
+</ul>
+
+<p>For example, the following JSON descriptor defines a protobuf matching the <a
+href="https://github.com/grpc/grpc/blob/v1.22.0/examples/protos/helloworld.proto">official
+protobuf hello world example</a>.</p>
+
+<pre><code>"protos": {
+  "helloworld": {
+    "Greeter": {
+      "methods": {
+        "SayHello": { "requestType": "HelloRequest", "responseType": "HelloReply" }
+      }
+    },
+    "HelloRequest": {
+      "fields": {
+        "name": { "type": "string", "id": 1 }
+      }
+    },
+    "HelloReply": {
+      "fields": {
+        "message": { "type": "string", "id": 1 }
+      }
+    }
+  }
+}</code></pre>
 
 <% include ../../_footer %>
