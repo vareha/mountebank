@@ -188,4 +188,61 @@ protobuf hello world example</a>.</p>
   }
 }</code></pre>
 
+<h2>Stubs</h2>
+
+<p>As with other Mountebank protocols, the <code>stubs</code> imposter section
+defines predicates matching requests to the responses for that request. See <a
+href="/docs/api/stubs">stubs</a> for full documentation on stubs in
+Mountebank.</p>
+
+<p>The following example <code>stubs</code> imposter section defines two stubs
+using the "helloworld" protos.</p>
+
+<pre><code>"stubs": [
+  {
+    "predicates": [
+      { "equals": { "requestType": "helloworld.HelloRequest" } },
+      { "equals": { "responseType": "helloworld.HelloResponse" } },
+      { "equals": { "request": { "name": "John Smith" } } }
+    ],
+    "responses": [
+      { "is": { "response": { "message": "Hello John!" } } },
+      { "is": { "response": { "message": "Hello again John!" } } },
+      { "is": { "error": { "code": 14, "message": "too many hello's" } } }
+    ]
+  },
+  {
+    "predicates": [
+      { "equals": { "methodName": "helloworld.Greeter.SayHello" } }
+    ],
+    "responses": [
+      { "is": { "response": { "message": "have we met?" } } }
+    ]
+  }
+]</code></pre>
+
+<p>For an incoming request of type
+<code>HelloRequest</code>, where the response is type
+<code>HelloResponse</code>, and where the
+<code>HelloRequest</code> "name" field is equal to "John Smith", the imposter
+will return <code>HelloResponse</code> responses where the "response" field is
+"Hello John!"; then "Hello again John!"; then an error response of type
+"unavailable" (see the <a
+href="https://github.com/grpc/grpc/blob/v1.22.0/doc/statuscodes.md">GRPC error
+codes documentation</a> for the list of all error codes).</p>
+
+<p>For all requests to the <code>SayHello</code> endpoint that don't match the
+earlier stub, the imposter will return a <code>HelloResponse</code> response
+where the "response" field is "have we met?".</p>
+
+<p>You should usually define the request type and/or service method (which
+implies request type) if you're predicating on request. A predicate like
+<code>{ "equals": { "request": {"name": "john smith" } } }</code> will never
+match if the request type doesn't have a field called "name".</p>
+
+<p>You should usually define the response type and/or service method if you're
+sending a response. Sending a response that can't be serialized to the expected
+protobuf response will fail with a warning in the logs.</p>
+<!-- TODO: test that failure to serialize warns in the logs -->
+
 <% include ../../_footer %>
