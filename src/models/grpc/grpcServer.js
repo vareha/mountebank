@@ -22,7 +22,7 @@ function create(options, logger, responseFn) {
         target = host + ':' + port;
 
     const credentials = options.cert && options.key
-        ? grpc.ServerCredentials.createSsl(null, { private_key: options.key, cert_chain: options.cert }, false)
+        ? grpc.ServerCredentials.createSsl(null, [{ private_key: options.key, cert_chain: options.cert }], false)
         : grpc.ServerCredentials.createInsecure();
 
     const grpcHandler = (callback, namespaceName, serviceName, methodName, responseType, request) =>
