@@ -159,7 +159,10 @@ for the canonical documentation.</p>
   <li>Message types should have a single child key: <code>fields</code>.</li>
   <li>Under <code>fields</code> you should define each field for the message type.</li>
   <li>Each field should have a <code>type</code> and an <code>id</code>.</li>
-  <li><code>type</code> defines the data type of the field (e.g. string, int32, bool).</li>
+  <li>
+    <code>type</code> defines the data type of the field (e.g. string, int32, bool).
+    See the <a href="https://github.com/protobufjs/protobuf.js#valid-message">protobuf.js valid message documentation</a> for a list of valid types.
+  </li>
   <li><code>id</code> defines the numeric id of the field (e.g. 1, 2, 3).</li>
   <li>Just as with regular protobuf definitions, both client and server must agree on the type and id for each field.</li>
 </ul>
