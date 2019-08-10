@@ -14,7 +14,7 @@ test GRPC based microservices with mocked dependencies.</p>
 <h2>Currently Unsupported</h2>
 
 <ul>
-  <li>TLS</li>
+  <li>TLS? (untested)</li>
   <li>Streaming calls</li>
 </ul>
 
@@ -43,24 +43,22 @@ test GRPC based microservices with mocked dependencies.</p>
     in the <code>POST</code> response.</td>
     <td>The port to run the imposter on.</td>
   </tr>
-  <!-- ]
   <tr>
     <td><code>key</code></td>
     <td>A PEM-formatted string</td>
     <td>No</td>
     <td>A built in private key</td>
-    <td>The GRPC server private key</td>
+    <td>The GRPC server private key. Only takes effect if <code>cert</code> is
+    also specified.</td>
   </tr>
-  -->
-  <!--
   <tr>
     <td><code>cert</code></td>
     <td>A PEM-formatted string</td>
     <td>No</td>
     <td>A built in self-signed certificate</td>
-    <td>The GRPC server certificate</td>
+    <td>The GRPC server certificate. Only takes effect if <code>key</code> is
+    also specified.</td>
   </tr>
-   -->
   <!--
   <tr>
     <td><code>mutualAuth</code></td>

@@ -19,8 +19,11 @@ function create(options, logger, responseFn) {
         server = new grpc.Server(),
         host = options.host || '',
         port = options.port || 4545,
-        target = host + ':' + port,
-        credentials = grpc.ServerCredentials.createInsecure(); // FIXME
+        target = host + ':' + port;
+
+    const credentials = options.cert && options.key
+        ? grpc.ServerCredentials.createSsl(null, { private_key: options.key, cert_chain: options.cert }, false)
+        : grpc.ServerCredentials.createInsecure();
 
     const grpcHandler = (callback, namespaceName, serviceName, methodName, responseType, request) =>
         require('./grpcRequest')
@@ -87,6 +90,8 @@ function create(options, logger, responseFn) {
             metadata: {},
             proxy: {},
             encoding: 'utf8',
+            key: options.cert && options.key,
+            cert: options.key && options.cert,
             close: callback => {
                 server.tryShutdown(callback);
                 Object.keys(connections).forEach(socket => {
