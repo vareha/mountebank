@@ -59,25 +59,52 @@ function create(options, logger, responseFn) {
 
     // parse our proto services and types from the imposter.json
     const protos = options.protos || [];
-    Object.entries(protos).forEach(([namespaceName, namespaceDefn]) => {
-        // use protobuf.js to parse the namespace
-        const toParse = {
-            // protobuf.js requires a top level key of "nested"
-            nested: namespaceDefn
-        };
-        const namespace = protobufjs.Namespace.fromJSON(namespaceName, toParse);
 
-        // build a map of message names to parsed types
-        const messageMap = createMessageMap(namespace);
+    function checkMethods(json) {
+        return Object
+          .entries(json)
+          .reduce((hasMethods, [propName, child]) => {
+            if (hasMethods) return true; // если уже есть методы, но не проверять чаилдов на methods
+            if (typeof child !== 'object') return false; // если не объект, то не проверять чаилдов на methods
+      
+            return Boolean(child.methods) || checkMethods(child);
+          }, false);
+      }
 
-        // add each service and corresponding handler
-        getServices(namespace).forEach(([serviceName, serviceDefn]) => {
-            const service = createService(namespaceName, serviceName, serviceDefn, messageMap),
-                handler = createServiceHandler(namespaceName, serviceName, serviceDefn, grpcHandler);
-            logger.info('Adding service: %s.%s', namespaceName, serviceName);
-            server.addService(service, handler);
-        });
-    });
+    function processNode (jsonDescriptor) {
+        return Object
+          .entries(jsonDescriptor)
+          .reduce((acc, [namespaceName, namespaceDefn]) => {
+            switch (typeof namespaceDefn) {
+              case "function":
+              case "number":
+              case "boolean":
+              case "string": {
+                return { ...acc, [namespaceName]: namespaceDefn }
+              }
+              default: {
+                if (Object.entries(namespaceDefn).some(checkMethods)) {
+                    var toParse = {
+                        // protobuf.js requires a top level key of "nested"
+                        nested: namespaceDefn
+                    };
+                    var namespace = protobufjs.Namespace.fromJSON(namespaceName, toParse);
+                    var messageMap = createMessageMap(namespace);
+                    // add each service and corresponding handler
+                    getServices(namespace).forEach(([serviceName, serviceDefn]) => {
+                        var service = createService(namespaceName, serviceName, serviceDefn, messageMap),
+                            handler = createServiceHandler(namespaceName, serviceName, serviceDefn, grpcHandler);
+                        logger.info('Adding service: %s.%s', namespaceName, serviceName);
+                        server.addService(service, handler);
+                    });
+                return { ...acc, [namespaceName]: processNode(namespaceDefn), prewName: namespaceName }
+                }
+             }
+            }
+          }, {});
+      }
+
+    processNode(protos)
 
     // bind to our port, start the server and return our details
     server.bindAsync(target, credentials, (error, port) => {
