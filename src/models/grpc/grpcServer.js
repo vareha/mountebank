@@ -60,18 +60,18 @@ function create(options, logger, responseFn) {
     // parse our proto services and types from the imposter.json
     const protos = options.protos || [];
 
-    function checkMethods(json) {
+    function isService(json) {
         return Object
           .entries(json)
           .reduce((hasMethods, [propName, child]) => {
             if (hasMethods) return true; // если уже есть методы, но не проверять чаилдов на methods
             if (typeof child !== 'object') return false; // если не объект, то не проверять чаилдов на methods
       
-            return Boolean(child.methods) || checkMethods(child);
+            return Boolean(child.methods) || isService(child);
           }, false);
       }
 
-    function processNode (jsonDescriptor) {
+    function processNode (jsonDescriptor, fullNamespace = '') {
         return Object
           .entries(jsonDescriptor)
           .reduce((acc, [namespaceName, namespaceDefn]) => {
@@ -80,28 +80,29 @@ function create(options, logger, responseFn) {
               case "number":
               case "boolean":
               case "string": {
-                return { ...acc, [namespaceName]: namespaceDefn }
+                return { ...acc, [namespaceName]: namespaceDefn, fullNamespace }
               }
               default: {
-                if (Object.entries(namespaceDefn).some(checkMethods)) {
+                if (Object.entries(namespaceDefn).some(isService)) {
                     var toParse = {
                         // protobuf.js requires a top level key of "nested"
                         nested: namespaceDefn
                     };
+                    const fullNamespace = acc.prevPropName ? `${acc.prevPropName}.${namespaceName}` : namespaceName
                     var namespace = protobufjs.Namespace.fromJSON(namespaceName, toParse);
                     var messageMap = createMessageMap(namespace);
                     // add each service and corresponding handler
                     getServices(namespace).forEach(([serviceName, serviceDefn]) => {
-                        var service = createService(namespaceName, serviceName, serviceDefn, messageMap),
-                            handler = createServiceHandler(namespaceName, serviceName, serviceDefn, grpcHandler);
-                        logger.info('Adding service: %s.%s', namespaceName, serviceName);
+                        var service = createService(fullNamespace, serviceName, serviceDefn, messageMap),
+                            handler = createServiceHandler(fullNamespace, serviceName, serviceDefn, grpcHandler);
+                        logger.info('Adding service: %s.%s', fullNamespace, serviceName);
                         server.addService(service, handler);
                     });
-                return { ...acc, [namespaceName]: processNode(namespaceDefn), prewName: namespaceName }
+                    return { ...acc, [namespaceName]: processNode(namespaceDefn, fullNamespace), fullNamespace }
                 }
              }
             }
-          }, {});
+          }, { prevPropName: fullNamespace });
       }
 
     processNode(protos)
